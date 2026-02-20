@@ -1,6 +1,7 @@
 from sqlalchemy import delete, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from database.connect import SessionLocal
 from models.chat import Chat
 from schemas.inbox import FetchIn, Filter
 
@@ -8,48 +9,61 @@ class InboxCRUD:
     def __init__(self):
         pass
 
-    async def send_chat(self, db: AsyncSession, **info):
-        chat = Chat(**info)
-        db.add(chat)
+    async def send_chat(self, **info):
+        async with SessionLocal() as db:
+            chat = Chat(**info)
+            db.add(chat)
 
-        try:
-            await db.commit()
-            await db.refresh()
-        except:
-            await db.rollback()
-            return False
-        return chat
+            try:
+                await db.commit()
+                await db.refresh()
+            except:
+                await db.rollback()
+                return False
+            return chat
     
-    async def get_chat(self, db: AsyncSession, fetch: FetchIn, **info):
-        stmt = select(Chat)
-        
-        for field, value in info.items():
-            column = getattr(Chat, field, None)
+    async def get_chat(self, fetch: FetchIn, **info):
+        async with SessionLocal() as db:
+            stmt = select(Chat)
+            
+            for field, value in info.items():
+                column = getattr(Chat, field, None)
 
-            if not column:
-                continue
-            stmt = stmt.where(column == value)
-        stmt = await db.execute(stmt)
-        if fetch == "all":
-            result = stmt.scalars().all()
-        elif fetch == "single":
-            result = stmt.scalar_one_or_none()
+                if not column:
+                    continue
+                stmt = stmt.where(column == value)
+            stmt = await db.execute(stmt)
+            if fetch == "all":
+                result = stmt.scalars().all()
+            elif fetch == "single":
+                result = stmt.scalar_one_or_none()
 
-        if not result:
-            return False
-        return result
+            if not result:
+                return False
+            return result
     
-    async def delete_chat(self, db: AsyncSession, message_id, user_id):
-        await db.execute(delete(Chat).where(Chat.id == message_id, Chat.sender_id == user_id))
-        try:
-            await db.commit()
-        except:
-            await db.rollback()
-            return False
-        return True
+    async def delete_chat(self, message_id, user_id):
+        async with SessionLocal() as db:
+            await db.execute(delete(Chat).where(Chat.id == message_id, Chat.sender_id == user_id))
+            try:
+                await db.commit()
+            except:
+                await db.rollback()
+                return False
+            return True
     
-    async def mark_read(self, db: AsyncSession, message_id):
-        await db.execute(update(Chat).where(Chat.id == message_id, Chat.read == False).values(read = True))
+    async def mark_chat_read(self, message_id, user_id):
+        async with SessionLocal() as db:
+            await db.execute(update(Chat).where(Chat.id == message_id, Chat.receiver_id == user_id, Chat.read == False).values(read = True))
+            try:
+                await db.commit()
+            except:
+                await db.rollback()
+                return False
+            return True
+    
+    async def mark_inbox_read(self, db: AsyncSession, message_thread, user_id):
+        await db.execute(update(Chat).where(Chat.message_thread == message_thread, Chat.receiver_id == user_id, Chat.read == False).values(read = True))
         try:
             await db.commit()
         except:

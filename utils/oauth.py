@@ -3,7 +3,7 @@ from utils.authentication_token import verify_token
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from database.session import get_db
-from model.users import AnonyUser
+from models.users import Users
 
 async def check_token(token: str, db: AsyncSession):
     user = verify_token(token)

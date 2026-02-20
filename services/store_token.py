@@ -7,7 +7,7 @@ class TokenCRUD:
     def __init__(self):
           pass
 
-    async def store_tokens(token:str, reason: str, expiry, id: int, db: AsyncSession):
+    async def store_tokens(self, token:str, reason: str, expiry, id: int, db: AsyncSession):
         stmt = Tokens(token = token, reason = reason, expiry = expiry, user_id = id)
         db.add(stmt)
         try:
@@ -18,14 +18,14 @@ class TokenCRUD:
             return False
         return True
 
-    async def get_tokens(db: AsyncSession, token):
+    async def get_tokens(self, db: AsyncSession, token):
         stmt = await db.execute(select(Tokens).where(Tokens.token == token))
         result = stmt.scalar_one_or_none()
         if result:
             return result
         return False
 
-    async def update_tokens(db: AsyncSession, **info):
+    async def update_tokens(self, db: AsyncSession, **info):
         stmt = update(Tokens)
 
         for field, value in info.items():

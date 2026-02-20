@@ -2,12 +2,11 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import delete, or_, select, update
 from config.setting import Setting
 from database.session import get_db
-from fastapi import Depends, FastAPI, HTTPException, Request, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from models.tokens import Tokens
-from models.users import Users
 from schemas.users import LoginInfo, RegisterUserIn
 from sqlalchemy.ext.asyncio import AsyncSession
-from services.store_token import TokenCRUD, store_tokens, update_tokens
+from services.store_token import TokenCRUD
 from services.users import UserCRUD
 from utils import hash_password
 from utils.authentication_token import create_access_token, create_refresh_token
@@ -17,7 +16,7 @@ from utils.username import create_username
 from utils.verification_token import generate_verification_token
 
 
-auth_router = FastAPI(prefix="/auth", tags=["Authentication"])
+auth_router = APIRouter(prefix="/auth", tags=["Authentication"])
 setting = Setting()
 userCrud = UserCRUD()
 tokenCrud = TokenCRUD()
@@ -55,7 +54,7 @@ async def sign_up(user: RegisterUserIn, db: AsyncSession = Depends(get_db)):
 # Login page
 @auth_router.post("/login")
 async def login(user: LoginInfo, response: Response, db: AsyncSession = Depends(get_db)):
-    result = await userCrud.get_user(db, "single", None, {"username" : user.username})
+    result = await userCrud.get_user(db, "single", None, **{"username" : user.username})
 
     if not result:
         raise HTTPException(status_code=401, detail="User not found!")

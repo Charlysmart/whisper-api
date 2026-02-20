@@ -9,7 +9,7 @@ class UserSetting(Base):
     user_id = Column(INTEGER, ForeignKey("users.id", ondelete="CASCADE"), unique=True, index=True)
     email = Column(BOOLEAN, default=False, nullable=False)
     push = Column(BOOLEAN, default=False, nullable=False)
-    updated_at = Column(TIMESTAMP(timezone=True), default=func.now())
+    updated_at = Column(TIMESTAMP(timezone=True), default=func.now(), onupdate=func.now())
 
 
 user = relationship("Users")

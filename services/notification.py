@@ -1,6 +1,7 @@
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from database.connect import SessionLocal
 from models.notification import Notification
 from schemas.notification import Filter
 
@@ -8,17 +9,18 @@ class NotificationCRUD:
     def __init__(self):
         pass
 
-    async def add_notification(self, db: AsyncSession, **info):
-        notify = await Notification(**info)
-        db.add(notify)
+    async def add_notification(self, **info):
+        async with SessionLocal() as db:
+            notify = await Notification(**info)
+            db.add(notify)
 
-        try:
-            await db.commit()
-            await db.refresh(notify)
-        except:
-            await db.rollback()
-            return False
-        return notify
+            try:
+                await db.commit()
+                await db.refresh(notify)
+            except:
+                await db.rollback()
+                return False
+            return notify
     
     async def get_notification(self, db: AsyncSession, filter: Filter, page: int, user_id: int):
         limit = 10
@@ -42,3 +44,11 @@ class NotificationCRUD:
                 "notify_count" : notify_count
             }
         return False
+    
+    async def mark_read(self, id: int, db: AsyncSession):
+        await db.execute(update(Notification).where(Notification.id == id).values(read = True))
+        try:
+            await db.commit()
+        except Exception as e:
+            await db.rollback()
+            return False

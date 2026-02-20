@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from config.setting import Setting
 from sqlalchemy.ext.asyncio import AsyncSession
 from database.session import get_db
-from services.store_token import TokenCRUD, get_tokens, store_tokens, update_tokens
+from services.store_token import TokenCRUD
 from services.users import UserCRUD
 from utils.authentication_token import create_access_token, create_refresh_token, verify_token
 from utils.check_user import get_current_user
