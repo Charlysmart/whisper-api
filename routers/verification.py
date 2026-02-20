@@ -82,7 +82,7 @@ async def refresh_token(request: Request, response:Response, db: AsyncSession = 
 
     # update the database with the new refresh token and mark the old refresh token true
     await tokenCrud.update_tokens(db, {"token" : hash_tokens(token)})
-    update_refresh = await store_tokens(hash_tokens(new_refresh_token), "refresh token", datetime.now(timezone.utc) + timedelta(days=7), verified["id"], db)
+    update_refresh = await tokenCrud.store_tokens(hash_tokens(new_refresh_token), "refresh token", datetime.now(timezone.utc) + timedelta(days=7), verified["id"], db)
     
     if not update_refresh:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Error refreshing token! Kindly re-login.")
