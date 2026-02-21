@@ -15,10 +15,10 @@ class WhisperroomCRUD:
             db.add(chat)
             try:
                 await db.commit()
-                await db.refresh()
+                await db.refresh(chat)
             except:
                 await db.rollback()
-                return False
+                return None
             return chat
     
     async def get_chat(self, fetch: FetchIn, **info):

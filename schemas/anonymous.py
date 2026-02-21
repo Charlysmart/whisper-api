@@ -9,7 +9,7 @@ class Filter(str, Enum):
 
 class AnonymousIn(BaseModel):
     username : str
-    message : str
+    content : str
     be_replied : bool
 
 

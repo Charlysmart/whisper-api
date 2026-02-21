@@ -41,55 +41,59 @@ async def reply_chat(websocket: WebSocket):
             msg_data = data.get("data")
 
             if msg_type == "message":
-                thread_exist = await anonymousCrud.get_single_anonymous({"message_thread" : msg_data["message_thread"]})
+                thread_exist = await anonymousCrud.get_single_anonymous(**{"message_thread" : msg_data["message_thread"]})
 
                 if not thread_exist:
-                    return {
-                        "error": "Conversation not found"
-                    }
+                    await websocket.send_json({
+                        "type": "error",
+                        "data": "Conversation not found"
+                    })
                 
                 if thread_exist.sender_id == id:
                     receiver = thread_exist.receiver_id
                 elif thread_exist.receiver_id == id:
                     receiver = thread_exist.sender_id
                 else:
-                    return {
-                        "error": "You are not part of this conversation"
-                    }
+                    await websocket.send_json({
+                        "type": "error",
+                        "data": "You are not part of this conversation"
+                    })
                 
                 if not msg_data.get("message", "").strip() and not msg_data.get("image"):
-                    return {
-                        "error" : "Can't send empty message!"}
+                    await websocket.send_json({
+                        "type": "error",
+                        "data": "Can't send empty message!"
+                    })
                 
                 if msg_data.get("reply_to") is not None:
-                    check_reply = await chatCrud.get_chat("single", {
+                    check_reply = await chatCrud.get_chat("single", **{
                         "id" : msg_data.get("reply_to"),
                         "message_thread" : msg_data["message_thread"]}
                     )
 
                     if not check_reply:
-                        return {
-                            "error" : "Invalid reply message"
-                        }
+                        await websocket.send_json({
+                            "type": "error",
+                            "data": "Invalid reply message"
+                        })
                     
-                message_handler = await chatCrud.send_chat({
-                    "content" : msg_data.get("message", ""),
-                    "message_thread" : msg_data["message_thread"], 
-                    "sender_id" : user, 
-                    "image" : msg_data.get("image"),
-                    "receiver_id" : receiver, 
-                    "reply_to" : msg_data.get("reply_to")
-                })
+                message_handler = await chatCrud.send_chat(
+                    content = msg_data.get("message", ""),
+                message_thread = msg_data["message_thread"], 
+                    sender_id = user["id"], 
+                    image = msg_data.get("image"),
+                    receiver_id = receiver, 
+                    reply_to = msg_data.get("reply_to")
+                )
 
-                notify = notificationCrud.add_notification({
-                    "type" : "reply",
-                    "notify_id" : msg_data["message_thread"], 
-                    "user_id" : receiver
-                })
+                if not message_handler:
+                    await websocket.send_json({
+                        "type": "error",
+                        "data": "Can't send message"
+                    })
 
-                if message_handler and notify:
+                if message_handler:
                     send_message = message_handler
-                    notify = notify
                     reply = check_reply.content if msg_data.get("reply_to") else None
                     
                     await websocket.send_json({
@@ -134,20 +138,6 @@ async def reply_chat(websocket: WebSocket):
                                 "sent_at" : str(send_message.sent_at)
                             }
                         })
-
-                    receiver_notify_ws = connected_notify_users.get(receiver)
-                    if receiver_notify_ws:
-                        await receiver_notify_ws.send_json({
-                            "type" : "notification",
-                            "data" : {
-                                "type" : notify.type,
-                                "content" : notify.content,
-                                "notify_id" : notify.notify_id,
-                                "added" : str(notify.added),
-                                "read" : notify.read,
-                                "id" : notify.id
-                            }
-                        })
             elif msg_type == "read_receipt":
                 message_id = msg_data.get("message_id")
                 if not message_id:
@@ -176,7 +166,7 @@ async def reply_chat(websocket: WebSocket):
 
 @chat_router.get("/reply_chat")
 async def get_reply_content(id: int, user: dict = Depends(check_user_verified), db: AsyncSession = Depends(get_db)):
-    result = await chatCrud.get_chat("single", {"id" : id})
+    result = await chatCrud.get_chat("single", **{"id" : id})
 
     if not result:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cannot reply to this message!")
@@ -186,31 +176,32 @@ async def get_reply_content(id: int, user: dict = Depends(check_user_verified), 
 async def get_chat(thread: str, user: dict = Depends(check_user_verified), db: AsyncSession = Depends(get_db)):
     if not thread:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No thread attached")
-    result = await chatCrud.get_chat("all", {"message_thread" : thread})
+    result = await chatCrud.get_chat("all", **{"message_thread" : thread})
 
-    if not result:
-        return {"userId": user["id"], "chat": []}
-
-    if all(
-        chat.sender_id != user["id"] and chat.receiver_id != user["id"]
-        for chat in result
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You don't have access to this conversation"
-        )
-    chat = []
-    for c in result:
-        parent_msg = await db.get(Chat, c.reply_to)  # fetch message by id
-        parent_content = parent_msg.content if parent_msg else None
-        chat.append({
-            "sender" : c.sender_id == user["id"],
-            "message_thread" : c.message_thread,
-            "content" : c.content,
-            "image" : c.image,
-            "sent_at" : extract_time(c.sent_at),
-            "id" : c.id,
-            "read" : c.read,
-            "reply_to" : parent_content
-        })
-    return chat
+    if result:     
+        if all(
+            chat.sender_id != user["id"] and chat.receiver_id != user["id"]
+            for chat in result
+        ):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You don't have access to this conversation"
+            )
+        chat = []
+        for c in result:
+            parent_msg = await db.get(Chat, c.reply_to)  # fetch message by id
+            parent_content = parent_msg.content if parent_msg else None
+            chat.append({
+                "sender" : c.sender_id == user["id"],
+                "message_thread" : c.message_thread,
+                "content" : c.content,
+                "image" : c.image,
+                "sent_at" : extract_time(c.sent_at),
+                "id" : c.id,
+                "read" : c.read,
+                "reply_to" : parent_content
+            })
+        return chat
+    return {
+        "chat": []
+    }

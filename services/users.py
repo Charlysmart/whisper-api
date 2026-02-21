@@ -1,5 +1,5 @@
 from typing import Optional
-from sqlalchemy import column, or_, select, update
+from sqlalchemy import and_, column, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.users import Users
@@ -23,24 +23,30 @@ class UserCRUD:
     async def get_user(self, db: AsyncSession, fetch: FetchIn = "single", condition: Optional[str] = None, **info):
         stmt = select(Users)
 
+        filters = []
+
         for field, value in info.items():
             column = getattr(Users, field, None)
-            if not column:
-                continue
-            if condition == "or":
-                stmt = stmt.where(or_(column == value))
-            stmt = stmt.where(column == value)
+            if column is not None:
+                filters.append(column == value)
+
+        if condition == "or":
+            stmt = stmt.where(or_(*filters))
+        else:
+            stmt = stmt.where(and_(*filters))
             
         stmt = await db.execute(stmt)
         if fetch == "single":
             result = stmt.scalar_one_or_none()
         elif fetch == "all":
             result = stmt.scalars().all()
-        if not result:
-            return False
-        return result
+        else:
+            return None
+        
+        print("result: ", result)
+        return result if result else False
     
-    async def update_user(self, db: AsyncSession, where: dict, value: dict):
+    async def update_user(self, db: AsyncSession, where: dict, info: dict):
         stmt = update(Users)
 
         for field, value in where.items():
@@ -49,7 +55,7 @@ class UserCRUD:
                 continue
             stmt = stmt.where(column == value)
             
-        stmt = await db.execute(stmt.values(**value))
+        stmt = await db.execute(stmt.values(info))
         try:
             await db.commit()
         except:

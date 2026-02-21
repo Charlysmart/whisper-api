@@ -8,7 +8,7 @@ from schemas.users import LoginInfo, RegisterUserIn
 from sqlalchemy.ext.asyncio import AsyncSession
 from services.store_token import TokenCRUD
 from services.users import UserCRUD
-from utils import hash_password
+from utils.hash_password import hash_password, verify_password
 from utils.authentication_token import create_access_token, create_refresh_token
 from utils.check_user import get_current_user
 from utils.hash_token import hash_tokens
@@ -38,11 +38,13 @@ async def sign_up(user: RegisterUserIn, db: AsyncSession = Depends(get_db)):
     # generate the site username and makes sure it doesn't exist in the database
     while True:
         custom_username = create_username()
-        check_user = await userCrud.get_user(db, "single", None, **{"custom_username" : userInfo.custom_username})
+        check_user = await userCrud.get_user(db, "single", None, **{"custom_username" : custom_username})
         if not check_user:
             break
             
     userInfo["custom_username"] = custom_username
+    userInfo["password"] = hash_password(userInfo["password"])
+    del userInfo["confirm_password"]
     new_user = await userCrud.create_user(db, **userInfo)
     if not new_user:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="An error occurred while creating an account! Kindly try again shortly.")
@@ -59,7 +61,8 @@ async def login(user: LoginInfo, response: Response, db: AsyncSession = Depends(
     if not result:
         raise HTTPException(status_code=401, detail="User not found!")
     
-    if not hash_password.verify_password(result.password, user.password):
+    if not verify_password(result.password, user.password):
+        print(f"in: {result.password} out: {user.password}")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect Password!")
     
     access_token = create_access_token({"id": result.id, "username": result.username})
@@ -86,7 +89,7 @@ async def login(user: LoginInfo, response: Response, db: AsyncSession = Depends(
     )
 
     if not result.verified:
-        updated = await tokenCrud.update_tokens(id, **{"user_id" : result.id, "reason" : "Email verification token", "revoked" : False})
+        updated = await tokenCrud.update_tokens(db, **{"user_id" : result.id, "reason" : "Email verification token", "revoked" : False})
         verification_token = generate_verification_token()
         store_verification_token = await tokenCrud.store_tokens(verification_token, "Email verification token", datetime.now(timezone.utc) + timedelta(minutes=5), result.id, db)
         if not store_verification_token:

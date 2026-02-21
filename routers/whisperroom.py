@@ -44,48 +44,83 @@ async def post_whisperroom(room_thread: str, websocket: WebSocket):
             msg_type = data.get("type")
             msg_data = data.get("data")
             if msg_type == "message":
-                if not msg_data.get("image") and msg_data.get("content") == "":
-                    return {
-                        "error" : "Can't send empty field!"
-                    }
-                room_exists = await roomCrud.select_room("single", {"room_thread" : room_thread})
 
+                if not msg_data.get("image") and not msg_data.get("content", "").strip():
+                    await websocket.send_json({
+                        "type": "error",
+                        "data": "Can't send empty field!"
+                    })
+                    continue
+
+                room_exists = await roomCrud.select_room("single", room_thread=room_thread)
                 if not room_exists:
-                    return {
-                        "error" : "Room does not exist!"
-                    }
-                user_in_room = await roomCrud.select_joined_room("single", {"room_thread" : room_thread, "user_id" : user_id})
+                    await websocket.send_json({
+                        "type": "error",
+                        "data": "Room does not exist!"
+                    })
+                    continue
+
+                user_in_room = await roomCrud.select_joined_room(
+                    "single",
+                    room_thread=room_thread,
+                    user_id=user_id
+                )
 
                 if not user_in_room:
-                    return {
-                        "error" : "You're not a part of this conversation!"
-                    }
-                
+                    await websocket.send_json({
+                        "type": "error",
+                        "data": "You're not a part of this conversation!"
+                    })
+                    continue
+
+                reply_parent = None
                 if msg_data.get("reply_to") is not None:
-                    reply_parent = await whisperroomCrud.get_chat("single", {"id" : data.get("reply_to"), "room_thread" : room_thread})
+                    reply_parent = await whisperroomCrud.get_chat(
+                        "single",
+                        id=msg_data.get("reply_to"),
+                        room_thread=room_thread
+                    )
 
                     if not reply_parent:
-                        return {
-                            "error" : "Invalid reply message"
-                        }
-                chat = await whisperroomCrud.post_chat({"sender_id" : user_id, "content" : msg_data.get("content"), "room_thread" : room_thread, "image" : msg_data.get("image"), "reply_to" : msg_data.get("reply_to")})
+                        await websocket.send_json({
+                            "type": "error",
+                            "data": "Invalid reply message"
+                        })
+                        continue
 
-                if chat:
-                    message = chat
-                    admin = room_exists.admin == user_id and room_exists.display_admin == True
-                    reply = reply_parent.content if msg_data.get("reply_to") else None
+                chat = await whisperroomCrud.post_chat(
+                    sender_id=user_id,
+                    content=msg_data.get("content"),
+                    room_thread=room_thread,
+                    image=msg_data.get("image"),
+                    reply_to=msg_data.get("reply_to")
+                )
+
+                print("Chat: ", chat)
+                if not chat:
+                    await websocket.send_json({
+                        "type": "error",
+                        "data": "Failed to send message"
+                    })
+                    continue
+
+                reply = reply_parent.content if reply_parent else None
+                admin = room_exists.admin == user_id and room_exists.display_admin
+
+                message_payload = {
+                    "sender": chat.sender_id == user_id,
+                    "message_thread": chat.room_thread,
+                    "image": chat.image,
+                    "content": chat.content,
+                    "reply_to": reply,
+                    "time": str(chat.sent_at),
+                    "id": chat.id,
+                    "admin": admin
+                }
+
                 await websocket.send_json({
                     "type": "message",
-                    "data": {
-                        "sender" : message.sender_id == user_id,
-                        "message_thread" : message.room_thread,
-                        "image" : message.image,
-                        "content" : message.content,
-                        "reply_to" : reply,
-                        "sent_at" : str(message.sent_at),
-                        "id" : message.id,
-                        "admin" : admin
-                    }
+                    "data": message_payload
                 })
 
                 for uid, sockets in connected_room_users[room_thread].items():
@@ -94,16 +129,11 @@ async def post_whisperroom(room_thread: str, websocket: WebSocket):
                             await ws.send_json({
                                 "type": "message",
                                 "data": {
-                                    "sender" : message.sender_id != user_id,
-                                    "message_thread" : message.room_thread,
-                                    "image" : message.image,
-                                    "content" : message.content,
-                                    "reply_to" : reply,
-                                    "sent_at" : str(message.sent_at),
-                                    "id" : message.id,
-                                    "admin" : admin
+                                    **message_payload,
+                                    "sender": chat.sender_id != user_id
                                 }
                             })
+                
             elif msg_type == "delete":
                 deleted = await whisperroomCrud.delete_chat(msg_data, user_id)
                 if deleted:
@@ -131,18 +161,18 @@ async def post_whisperroom(room_thread: str, websocket: WebSocket):
 
 @whisperroom_router.get("/whisperroom/{room_thread}")
 async def get_whisperroom(room_thread: str, user: dict = Depends(check_user_verified), db: AsyncSession = Depends(get_db)):
-    result = await roomCrud.select_room("single", {"room_thread" : room_thread})
+    result = await roomCrud.select_room("single", **{"room_thread" : room_thread})
     
     if not result:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Room does not exist!")
     
-    check_user = await roomCrud.select_joined_room("single", {"room_thread" : room_thread, "user_id" : user["id"]})
+    check_user = await roomCrud.select_joined_room("single", **{"room_thread" : room_thread, "user_id" : user["id"]})
 
     if not check_user:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You're not a part of this conversation!")
     
-    chat = await whisperroomCrud.get_chat("all", {"room_thread" : room_thread})
-    get_count = await roomCrud.get_room_count({"room_thread" : room_thread})
+    chat = await whisperroomCrud.get_chat("all", **{"room_thread" : room_thread})
+    get_count = await roomCrud.get_room_count(**{"room_thread" : room_thread})
 
     messages = []
     for c in chat:
@@ -152,7 +182,7 @@ async def get_whisperroom(room_thread: str, user: dict = Depends(check_user_veri
             "id" : c.id,
             "content" : c.content,
             "image" : c.image,
-            "time" : extract_time(c.sent_at),
+            "time" : c.sent_at,
             "reply_to" : parent_content,
             "sender" : c.sender_id == user["id"],
             "admin" : result.admin == c.sender_id and result.display_admin == True
@@ -167,7 +197,7 @@ async def get_whisperroom(room_thread: str, user: dict = Depends(check_user_veri
 
 @whisperroom_router.get("/reply_whisperroom")
 async def get_whisperroom(id: int, user: dict = Depends(check_user_verified), db: AsyncSession = Depends(get_db)):
-    result = await whisperroomCrud.get_chat("single", {"id" : id})
+    result = await whisperroomCrud.get_chat("single", **{"id" : id})
 
     if not result:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cannot reply to this message!")
@@ -191,7 +221,7 @@ async def leave_room(thread, user: dict = Depends(check_user_verified), db: Asyn
 @whisperroom_router.delete("/dissolve_room/{thread}")
 async def dissolve_room(thread, user: dict = Depends(check_user_verified), db: AsyncSession = Depends(get_db)):
     if thread:
-        status_check = await roomCrud.select_room("single", {"room_thread" : thread})
+        status_check = await roomCrud.select_room("single", **{"room_thread" : thread})
         
         if status_check.admin != user["id"]:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="You don't have right to dissolve this room")

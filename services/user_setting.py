@@ -9,7 +9,7 @@ class UserSettingCRUD:
         pass
 
     async def get_user_setting(self, user: int, db: AsyncSession):
-        stmt = await db.execute(select(UserSetting).where(UserSetting.user_id == user["id"]))
+        stmt = await db.execute(select(UserSetting).where(UserSetting.user_id == user))
         result = stmt.scalar_one_or_none()
         if not result:
             post_preference = UserSetting(user_id = user)

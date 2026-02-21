@@ -12,25 +12,28 @@ inboxCrud = InboxCRUD()
 
 @inbox_router.get("/inbox")
 async def inbox(page: int, filter: Filter, user: dict = Depends(check_user_verified), db: AsyncSession = Depends(get_db)):
-    result = await inboxCrud.get_inbox(db, user, page, filter)
-    inboxes = result.inbox
-    inbox_count = result.inbox_count
+    result = await inboxCrud.get_inbox(db, user["id"], page, filter)
+    if result:
+        inboxes = result["inbox"]
+        inbox_count = result["count"]
 
-    inbox = []
-    if not result:
-        return None
-    for r in inboxes:
-        inbox.append({
-            "content" : r.content,
-            "message_thread" : r.message_thread,
-            "image" : (not r.image),
-            "read" : not (r.read is False and r.receiver_id == user["id"]),
-            "sent_at" : r.sent_at
-        })
+        inbox = []
+        for r in inboxes:
+            inbox.append({
+                "content" : r.content,
+                "message_thread" : r.message_thread,
+                "image" : (not r.image),
+                "read" : not (r.read is False and r.receiver_id == user["id"]),
+                "sent_at" : r.sent_at
+            })
+        return {
+            "data" : inbox,
+            "count" : inbox_count
+        }
     return {
-        "data" : inbox,
-        "count" : inbox_count
-    }
+            "data" : [],
+            "count" : 0
+        }
 
 @inbox_router.websocket("/get_new_message")
 async def getNewMessage(websocket: WebSocket):

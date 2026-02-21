@@ -7,7 +7,7 @@ from services.anonymous import AnonymousCRUD
 from services.inbox import InboxCRUD
 from services.notification import NotificationCRUD
 from services.users import UserCRUD
-from utils import generate_message_thread
+from utils.generate_message_thread import generate_message_thread
 from utils.oauth import check_token, check_user_verified
 from utils.socket import connected_notify_users, connected_anonymous_users
 
@@ -22,7 +22,7 @@ inboxCrud = InboxCRUD()
 @anonymous_router.post("/send_anonymous")
 async def send_anonymous(content: AnonymousIn, db: AsyncSession = Depends(get_db), sender: dict = Depends(check_user_verified)):
     anonymous_content = content.model_dump()
-    receiver = await userCrud.get_user(db, "single", None, {"custom_username" : content.username})
+    receiver = await userCrud.get_user(db, "single", None, **{"username" : content.username})
     if not receiver:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invalid User! Kindly check the username correctly.")
     if sender["id"] == receiver.id:
@@ -30,7 +30,7 @@ async def send_anonymous(content: AnonymousIn, db: AsyncSession = Depends(get_db
     message_thread:str
     while True:
         message_thread = generate_message_thread()
-        result = await anonymousCrud.get_single_anonymous({"message_thread" : message_thread})
+        result = await anonymousCrud.get_single_anonymous(**{"message_thread" : message_thread})
         if not result:
             break
     
@@ -40,16 +40,16 @@ async def send_anonymous(content: AnonymousIn, db: AsyncSession = Depends(get_db
         "receiver_id" : receiver.id
     })
     del anonymous_content["username"]
-    insert = await anonymousCrud.post_anonymous(db, anonymous_content)
+    insert = await anonymousCrud.post_anonymous(db, **anonymous_content)
 
     if insert:
-        notify = await notificationCrud.add_notification({
+        notify = await notificationCrud.add_notification(**{
             "type" : "message", 
             "notify_id" : message_thread, 
             "user_id" : receiver.id
         })
 
-        receiver_notify = connected_notify_users.get(insert.receiver_id)
+        receiver_notify = connected_notify_users.get(receiver.id)
         if receiver_notify:
             await receiver_notify.send_json({
                 "type": "notification",
@@ -63,7 +63,7 @@ async def send_anonymous(content: AnonymousIn, db: AsyncSession = Depends(get_db
                 }
             })
         
-        receiver_anonymous = connected_anonymous_users.get(insert.receiver_id)
+        receiver_anonymous = connected_anonymous_users.get(receiver.id)
         if receiver_anonymous:
             await receiver_anonymous.send_json({
                 "type" : "anonymous",
@@ -86,11 +86,11 @@ async def send_anonymous(content: AnonymousIn, db: AsyncSession = Depends(get_db
 
 @anonymous_router.get("/get_anonymous")
 async def display_anonymous(filter: Filter, page: int = 1, user: dict = Depends(check_user_verified), db: AsyncSession = Depends(get_db)):
-    result = await anonymousCrud.get_anonymous(db, filter, page, user)
-    anony = result.Anonymous
-    anony_count = result.anony_count
-    anonymous = []
+    result = await anonymousCrud.get_anonymous(db, filter, page, user["id"])
     if result:
+        anony = result["Anonymous"]
+        anony_count = result["anony_count"]
+        anonymous = []
         for r in anony:
             anonymous.append({
                 "content" : r.content,
@@ -105,7 +105,10 @@ async def display_anonymous(filter: Filter, page: int = 1, user: dict = Depends(
             "anonymous" : anonymous,
             "count" : anony_count
         }
-    return None
+    return {
+            "anonymous" : [],
+            "count" : 0
+        }
 
 @anonymous_router.websocket("/new_anonymous")
 async def new_anonymous(websocket: WebSocket):
@@ -135,14 +138,35 @@ async def new_anonymous(websocket: WebSocket):
 
 @anonymous_router.patch("/reply_anonymous/{thread}")
 async def reply_message(thread: str, db: AsyncSession = Depends(get_db), user: dict = Depends(check_user_verified)):
-    stmt = await anonymousCrud.update_anonymous(db, thread, user, {"replied" : True, "read" : True})
+    stmt = await anonymousCrud.update_anonymous(db, thread, user["id"], {"replied" : True, "read" : True})
     if not stmt:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Failed to start a chat!")
-    transfer = await anonymousCrud.get_single_anonymous({"message_thread" == thread})
-    set_chat = inboxCrud.send_chat(db, {"message_thread" : transfer.message_thread, "sender_id" : transfer.sender_id, "content" : transfer.content, "read" : True, "sent_at" : transfer.sent_at, "receiver_id" : transfer.receiver_id})
-    
+    transfer = await anonymousCrud.get_single_anonymous(**{"message_thread" : thread})
+    set_chat = await inboxCrud.send_chat(**{"message_thread" : thread, "sender_id" : transfer.sender_id, "content" : transfer.content, "read" : True, "sent_at" : transfer.sent_at, "receiver_id" : transfer.receiver_id})
+    print("chat: ", set_chat)
+
     if not set_chat:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to initialize chat!")
+    notify = await notificationCrud.add_notification(**{
+                "type" : "reply", 
+                "notify_id" : thread, 
+                "user_id" : set_chat.receiver_id
+            })
+    
+    if notify:
+        receiver_notify = connected_notify_users.get(set_chat.receiver_id)
+        if receiver_notify:
+            await receiver_notify.send_json({
+                "type": "notification",
+                "data": {
+                    "type" : notify.type,
+                    "content" : notify.content,
+                    "notify_id" : notify.notify_id,
+                    "added" : str(notify.added),
+                    "read" : notify.read,
+                    "id" : notify.id
+                }
+            })
     return True
     
 @anonymous_router.patch("/markRead/{thread}")

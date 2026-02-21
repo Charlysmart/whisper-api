@@ -16,7 +16,7 @@ class InboxCRUD:
 
             try:
                 await db.commit()
-                await db.refresh()
+                await db.refresh(chat)
             except:
                 await db.rollback()
                 return False
@@ -32,6 +32,7 @@ class InboxCRUD:
                 if not column:
                     continue
                 stmt = stmt.where(column == value)
+
             stmt = await db.execute(stmt)
             if fetch == "all":
                 result = stmt.scalars().all()
@@ -39,7 +40,8 @@ class InboxCRUD:
                 result = stmt.scalar_one_or_none()
 
             if not result:
-                return False
+                return None
+            print("result: ", result)
             return result
     
     async def delete_chat(self, message_id, user_id):
@@ -74,21 +76,22 @@ class InboxCRUD:
     async def get_inbox(self, db: AsyncSession, id: int, page: int, filter: Filter = "all"):
         LIMIT = 10
         OFFSET = (page - 1) * 10
-        subq = select(Chat.message_thread, func.max(Chat.sent_at).label("time_sent")).where(or_(Chat.receiver_id == id, Chat.sender_id == id))
+        subq = select(Chat.message_thread, func.max(Chat.sent_at).label("time_sent"), func.max(Chat.id).label("id")).where(or_(Chat.receiver_id == id, Chat.sender_id == id))
         if filter == "unread":
             subq = subq.where(Chat.read == False)
         subq = subq.group_by(Chat.message_thread).subquery()
 
-        stmt = await db.execute(select(Chat).join(subq, (Chat.message_thread == subq.c.message_thread) & (Chat.sent_at == subq.c.time_sent)).distinct(Chat.message_thread).order_by(Chat.message_thread, Chat.sent_at.desc()).offset(OFFSET).limit(LIMIT))
-        count = select(func.count(func.distinct(Chat.message_thread))).select_from(Chat).where(or_(Chat.receiver_id == id, Chat.sender_id == id))
+        stmt = await db.execute(select(Chat).join(subq, (Chat.message_thread == subq.c.message_thread) & (Chat.sent_at == subq.c.time_sent) & (Chat.id == subq.c.id)).order_by(Chat.sent_at.desc()).offset(OFFSET).limit(LIMIT))
+        count = await db.execute(select(func.count(func.distinct(Chat.message_thread))).select_from(Chat).where(or_(Chat.receiver_id == id, Chat.sender_id == id)))
         inbox = stmt.scalars().all()
-        inbox_count = stmt.scalar_one()
+        inbox_count = count.scalar_one_or_none()
 
         if inbox:
+            print("inbox: ", inbox)
             return {
-                "count" : inbox_count,
+                "count" : inbox_count if inbox_count else 0,
                 "inbox" : inbox
             }
         
         else:
-            return False
+            return None

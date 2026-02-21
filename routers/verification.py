@@ -28,7 +28,7 @@ async def verify_email(token: str, db: AsyncSession = Depends(get_db), user: dic
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired! Kindly request for another token.")
     elif result.revoked:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token already used! Kindly request for another token.")
-    await tokenCrud.update_tokens(db, {"token": token})
+    await tokenCrud.update_tokens(db, **{"token": token})
     await UserCRUD().update_user(db, {"id" : result.user_id}, {"verified" : True})
     return {
         "message" : "Verification Successful!"
@@ -81,7 +81,7 @@ async def refresh_token(request: Request, response:Response, db: AsyncSession = 
     new_refresh_token = create_refresh_token({"id": verified["id"], "username" : verified["username"]})
 
     # update the database with the new refresh token and mark the old refresh token true
-    await tokenCrud.update_tokens(db, {"token" : hash_tokens(token)})
+    await tokenCrud.update_tokens(db, **{"token" : hash_tokens(token)})
     update_refresh = await tokenCrud.store_tokens(hash_tokens(new_refresh_token), "refresh token", datetime.now(timezone.utc) + timedelta(days=7), verified["id"], db)
     
     if not update_refresh:

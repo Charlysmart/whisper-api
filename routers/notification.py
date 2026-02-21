@@ -14,19 +14,24 @@ notificationCrud = NotificationCRUD()
 async def notification(filter: Filter, page: int = 1, user: dict = Depends(check_user_verified), db: AsyncSession = Depends(get_db)):
     result = await notificationCrud.get_notification(db, filter, page, user["id"])
 
-    notification = []
-    for r in result.notification:
-        notification.append({
-            "type" : r.type,
-            "content" : r.content,
-            "notify_id" : r.notify_id,
-            "added" : r.added,
-            "read" : r.read,
-            "id" : r.id
-        })
+    if result:
+        notification = []
+        for r in result["notification"]:
+            notification.append({
+                "type" : r.type,
+                "content" : r.content,
+                "notify_id" : r.notify_id,
+                "added" : r.added,
+                "read" : r.read,
+                "id" : r.id
+            })
+        return {
+            "notification" : notification,
+            "count" : result["notify_count"]
+        }
     return {
-        "notification" : notification,
-        "count" : result.notify_count
+        "notification" : [],
+        "count" : 0
     }
 
 

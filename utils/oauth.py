@@ -11,7 +11,7 @@ async def check_token(token: str, db: AsyncSession):
     if not user:
         raise ValueError("Invalid or expired token")
     
-    stmt = await db.execute(select(AnonyUser).where(AnonyUser.id == user["id"]))
+    stmt = await db.execute(select(Users).where(Users.id == user["id"]))
     result = stmt.scalar_one_or_none()
 
     if not result:

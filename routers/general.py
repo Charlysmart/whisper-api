@@ -23,8 +23,8 @@ def health():
 
 @general_router.get("/user")
 async def general(user: dict = Depends(check_user_verified), db: AsyncSession = Depends(get_db)):
-    result = await userCrud.get_user(db, "single", None, {"id" : user["id"]})
+    result = await userCrud.get_user(db, "single", None, **{"id" : user["id"]})
     return {
-        "username" : result.custom_username,
-        "whisper_username" : result.anony_username
+        "username" : result.username,
+        "whisper_username" : result.custom_username
     }

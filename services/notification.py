@@ -11,7 +11,7 @@ class NotificationCRUD:
 
     async def add_notification(self, **info):
         async with SessionLocal() as db:
-            notify = await Notification(**info)
+            notify = Notification(**info)
             db.add(notify)
 
             try:
@@ -52,3 +52,4 @@ class NotificationCRUD:
         except Exception as e:
             await db.rollback()
             return False
+        return True

@@ -61,7 +61,7 @@ class AnonymousCRUD:
             return False
     
     async def update_anonymous(self, db: AsyncSession, thread, user_id, values: dict):
-        stmt = await db.execute(update(Anonymous).where(Anonymous.message_thread == thread, Anonymous.receiver_id == user_id).values(values))
+        await db.execute(update(Anonymous).where(Anonymous.message_thread == thread, Anonymous.receiver_id == user_id).values(values))
         try:
             await db.commit()
         except:
