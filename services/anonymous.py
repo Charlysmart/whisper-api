@@ -14,10 +14,11 @@ class AnonymousCRUD:
         db.add(anony)
         try:
             await db.commit()
+            await db.refresh(anony)
         except:
             await db.rollback()
             return False
-        return True
+        return anony
     
     async def get_anonymous(self, db: AsyncSession, filter: Filter, page: int, user_id: int):
         limit = 10

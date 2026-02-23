@@ -87,7 +87,6 @@ class InboxCRUD:
         inbox_count = count.scalar_one_or_none()
 
         if inbox:
-            print("inbox: ", inbox)
             return {
                 "count" : inbox_count if inbox_count else 0,
                 "inbox" : inbox

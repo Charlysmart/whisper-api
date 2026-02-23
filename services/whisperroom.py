@@ -39,7 +39,7 @@ class WhisperroomCRUD:
     
     async def delete_chat(self, message_id: int, user_id: int):
         async with SessionLocal() as db:
-            await db.execute(delete(Whisperroom).where(Whisperroom.id == id, Whisperroom.sender_id == user_id))
+            await db.execute(delete(Whisperroom).where(Whisperroom.id == message_id, Whisperroom.sender_id == user_id))
             try:
                 await db.commit()
             except:

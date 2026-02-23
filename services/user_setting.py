@@ -23,7 +23,7 @@ class UserSettingCRUD:
         return result
     
     async def update_preference(self, user: int, info: dict, db: AsyncSession):
-        await db.execute(update(UserSetting).where(UserSetting.user_id == user["id"]).values(info))
+        await db.execute(update(UserSetting).where(UserSetting.user_id == user).values(info))
         try:
             await db.commit()
             return True
