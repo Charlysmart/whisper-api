@@ -4,6 +4,7 @@ from database.connect import SessionLocal
 from database.session import get_db
 from models.chat import Chat
 from services.anonymous import AnonymousCRUD
+from services.block_chat import BlockChatCRUD
 from services.inbox import InboxCRUD
 from services.notification import NotificationCRUD
 from utils.time_extract import extract_time
@@ -12,6 +13,7 @@ from utils.socket import connected_chat_users, connected_inbox_users, connected_
 
 chat_router = APIRouter(prefix="/pages", tags=["Pages"])
 anonymousCrud = AnonymousCRUD()
+blockChatCrud = BlockChatCRUD()
 chatCrud = InboxCRUD()
 notificationCrud = NotificationCRUD()
 
@@ -178,7 +180,16 @@ async def get_chat(thread: str, user: dict = Depends(check_user_verified), db: A
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No thread attached")
     result = await chatCrud.get_chat("all", **{"message_thread" : thread})
 
-    if result:     
+    if result: 
+        check_blocked = await blockChatCrud.get_blocked_chat(db, thread)
+        block = {
+            "blocked": bool(check_blocked),
+            "blocked_by": (
+                check_blocked.blocked_by == user["id"]
+                if check_blocked
+                else None
+            )
+        }
         if all(
             chat.sender_id != user["id"] and chat.receiver_id != user["id"]
             for chat in result
@@ -201,7 +212,10 @@ async def get_chat(thread: str, user: dict = Depends(check_user_verified), db: A
                 "read" : c.read,
                 "reply_to" : parent_content
             })
-        return chat
+        return {
+            "chat" : chat,
+            "block" : block
+        }
     return {
         "chat": []
     }

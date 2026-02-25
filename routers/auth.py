@@ -90,10 +90,15 @@ async def login(user: LoginInfo, response: Response, db: AsyncSession = Depends(
 
     if not result.verified:
         updated = await tokenCrud.update_tokens(db, **{"user_id" : result.id, "reason" : "Email verification token", "revoked" : False})
+        if not updated:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error while logging in!!! Kindly try again shortly.")
+        deleted = await tokenCrud.delete_tokens(db, **{"user_id" : result.id, "reason" : "Email verification token"})
+        if not deleted:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error while logging in!! Kindly try again shortly.")
         verification_token = generate_verification_token()
         store_verification_token = await tokenCrud.store_tokens(verification_token, "Email verification token", datetime.now(timezone.utc) + timedelta(minutes=5), result.id, db)
         if not store_verification_token:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Error while logging in! Kindly try again shortly. {verification_token}")
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error while logging in! Kindly try again shortly.")
         return {
             "message" : "Verification sent to email! Kindly check your email for your token"
         }
@@ -105,7 +110,7 @@ async def login(user: LoginInfo, response: Response, db: AsyncSession = Depends(
 @auth_router.delete("/logout")
 async def logout(response: Response, request: Request, user: dict = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     token = request.cookies.get("refresh_token")
-    await db.execute(delete(Tokens).where(Tokens.token == token))
+    await tokenCrud.delete_tokens(db, **{"token" : token})
     try:
         await db.commit()
         response.delete_cookie(
@@ -123,3 +128,6 @@ async def logout(response: Response, request: Request, user: dict = Depends(get_
     except:
         await db.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to logout")
+    return {
+        "message" : "Logged out!"
+    }

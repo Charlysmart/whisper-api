@@ -18,8 +18,16 @@ class RegisterUserIn(BaseModel):
         if self.password != self.confirm_password:
             raise ValueError("Passwords do not match!")
         return self
+    def convert_username(self):
+        self.username = self.username.lower()
+        return self
     
 
 class LoginInfo(BaseModel):
     username : str
     password : str
+
+    @model_validator(mode="after")
+    def convert_username(self):
+        self.username = self.username.lower()
+        return self

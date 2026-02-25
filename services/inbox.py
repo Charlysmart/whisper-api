@@ -2,6 +2,8 @@ from sqlalchemy import delete, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from database.connect import SessionLocal
+from models import block_chat
+from models.block_chat import BlockChat
 from models.chat import Chat
 from schemas.inbox import FetchIn, Filter
 
@@ -41,7 +43,6 @@ class InboxCRUD:
 
             if not result:
                 return None
-            print("result: ", result)
             return result
     
     async def delete_chat(self, message_id, user_id):

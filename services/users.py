@@ -43,7 +43,6 @@ class UserCRUD:
         else:
             return None
         
-        print("result: ", result)
         return result if result else False
     
     async def update_user(self, db: AsyncSession, where: dict, info: dict):

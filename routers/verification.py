@@ -28,8 +28,12 @@ async def verify_email(token: str, db: AsyncSession = Depends(get_db), user: dic
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token expired! Kindly request for another token.")
     elif result.revoked:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Token already used! Kindly request for another token.")
-    await tokenCrud.update_tokens(db, **{"token": token})
-    await UserCRUD().update_user(db, {"id" : result.user_id}, {"verified" : True})
+    updated = await tokenCrud.update_tokens(db, **{"token": token})
+    if updated:
+        await tokenCrud.delete_tokens(db, **{"token" : token})
+        await UserCRUD().update_user(db, {"id" : result.user_id}, {"verified" : True})
+    else:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Kindly try again shortly.")
     return {
         "message" : "Verification Successful!"
     }
@@ -37,6 +41,12 @@ async def verify_email(token: str, db: AsyncSession = Depends(get_db), user: dic
 # Resend Verification email
 @verify_router.get("/resend_verification")
 async def resend_verification(db: AsyncSession = Depends(get_db), user: dict = Depends(get_current_user)):
+    updated = await tokenCrud.update_tokens(db, **{"user_id" : user["id"], "reason" : "Email verification token", "revoked" : False})
+    if not updated:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error while logging in!! Kindly try again shortly.")
+    deleted = await tokenCrud.delete_tokens(db, **{"user_id" : user["id"], "reason" : "Email verification token"})
+    if not deleted:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error while logging in!!! Kindly try again shortly.")
     token = generate_verification_token()
     send_token = await tokenCrud.store_tokens(token, "Email verification token", datetime.now(timezone.utc) + timedelta(minutes=5), user["id"], db)
     if not send_token:
@@ -66,7 +76,7 @@ async def refresh_token(request: Request, response:Response, db: AsyncSession = 
     
     # checks if the token has been revoked already
     if result.revoked:
-        await tokenCrud.update_tokens(db, {"user_id" : result.user_id})
+        await tokenCrud.delete_tokens(db, **{"token" : hash_tokens(token)})
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token! Kindly re-login.")
     
     # verify the token to be sure its correct
@@ -82,6 +92,7 @@ async def refresh_token(request: Request, response:Response, db: AsyncSession = 
 
     # update the database with the new refresh token and mark the old refresh token true
     await tokenCrud.update_tokens(db, **{"token" : hash_tokens(token)})
+    await tokenCrud.delete_tokens(db, **{"token" : hash_tokens(token)})
     update_refresh = await tokenCrud.store_tokens(hash_tokens(new_refresh_token), "refresh token", datetime.now(timezone.utc) + timedelta(days=7), verified["id"], db)
     
     if not update_refresh:

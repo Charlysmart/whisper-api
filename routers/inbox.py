@@ -50,7 +50,6 @@ async def getNewMessage(websocket: WebSocket):
             return
         
     connected_inbox_users[user["id"]] = websocket
-    print("🟢 Inbox connected:", user["id"])
         
     try:
         while True:
@@ -63,6 +62,6 @@ async def getNewMessage(websocket: WebSocket):
 
 @inbox_router.patch("/mark_inbox_read")
 async def markInboxRead(thread : str, user: dict = Depends(check_user_verified), db: AsyncSession = Depends(get_db)):
-    stmt = await inboxCrud.mark_inbox_read(db, thread, user)
+    stmt = await inboxCrud.mark_inbox_read(db, thread, user["id"])
     if not stmt:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Try again!")

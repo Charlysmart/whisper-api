@@ -1,5 +1,5 @@
 from fastapi import HTTPException, status
-from sqlalchemy import select, update
+from sqlalchemy import delete, select, update
 from models.tokens import Tokens
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -35,6 +35,23 @@ class TokenCRUD:
                 stmt = stmt.where(column == value)
                 
         stmt = await db.execute(stmt.values(revoked = True))
+        try:
+            await db.commit()
+        except:
+            await db.rollback()
+            return False
+        return True
+
+    async def delete_tokens(self, db: AsyncSession, **info):
+        stmt = delete(Tokens)
+
+        for field, value in info.items():
+                column = getattr(Tokens, field, None)
+                if not column:
+                    continue
+                stmt = stmt.where(column == value)
+                
+        stmt = await db.execute(stmt)
         try:
             await db.commit()
         except:
