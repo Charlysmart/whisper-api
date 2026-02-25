@@ -28,13 +28,14 @@ async def block_chat(thread: str, user: dict = Depends(check_user_verified), db:
         add_block = await blockChatCrud.add_block_chat(db, thread, user["id"])
         if not add_block:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Couldn't block chat currently")
-        await receiver_ws.send_json({
-            "type" : "block",
-            "payload" : {
-                "blocked" : True,
-                "blocked_by" : add_block.blocked_by == user["id"]
-            }
-        })
+        if receiver_ws:
+            await receiver_ws.send_json({
+                "type" : "block",
+                "payload" : {
+                    "blocked" : True,
+                    "blocked_by" : add_block.blocked_by == user["id"]
+                }
+            })
         return {
             "blocked" : True,
             "blocked_by" : add_block.blocked_by == user["id"]
@@ -43,13 +44,14 @@ async def block_chat(thread: str, user: dict = Depends(check_user_verified), db:
         unblock_chat = await blockChatCrud.delete_block_chat(db, thread)
         if not unblock_chat:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to unblock chat")
-        await receiver_ws.send_json({
-            "type" : "block",
-            "payload" : {
-                "blocked" : False,
-                "blocked_by" : None
-            }
-        })
+        if receiver_ws:
+            await receiver_ws.send_json({
+                "type" : "block",
+                "payload" : {
+                    "blocked" : False,
+                    "blocked_by" : None
+                }
+            })
         return {
             "blocked" : False,
             "blocked_by" : None
