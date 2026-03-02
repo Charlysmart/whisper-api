@@ -87,8 +87,8 @@ async def refresh_token(request: Request, response:Response, db: AsyncSession = 
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid refresh token!! Kindly re-login.")
     
     # create a new refresh and access token
-    new_access_token = create_access_token({"id": verified["id"], "username" : verified["username"]})
-    new_refresh_token = create_refresh_token({"id": verified["id"], "username" : verified["username"]})
+    new_access_token = create_access_token({"id": verified["id"], "username" : verified["username"], "role": verified["role"]})
+    new_refresh_token = create_refresh_token({"id": verified["id"], "username" : verified["username"], "role": verified["role"]})
 
     # update the database with the new refresh token and mark the old refresh token true
     await tokenCrud.update_tokens(db, **{"token" : hash_tokens(token)})

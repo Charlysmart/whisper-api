@@ -8,6 +8,7 @@ class Users(Base):
     email = Column(String(100), nullable=False, unique=True)
     username = Column(String(50), nullable=False, unique=True)
     custom_username = Column(String(50), nullable=False, unique=True)
+    role = Column (String, nullable=False, default="user", index=True)
     password = Column(String(255), nullable=False)
     verified = Column(Boolean, nullable=False, default=False)
     created_at = Column(DateTime, nullable=False, default=func.now())

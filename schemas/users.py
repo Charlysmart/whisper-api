@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Literal
 from pydantic import BaseModel, EmailStr, model_validator
 
 
@@ -18,6 +19,16 @@ class RegisterUserIn(BaseModel):
         if self.password != self.confirm_password:
             raise ValueError("Passwords do not match!")
         return self
+    def convert_username(self):
+        self.username = self.username.lower()
+        return self
+    
+class AdminRegister(BaseModel):
+    username : str
+    email : EmailStr
+    role : Literal["admin"]
+    password : str
+    
     def convert_username(self):
         self.username = self.username.lower()
         return self

@@ -3,17 +3,17 @@ from config.setting import Setting
 from database.connect import Base, engine
 from contextlib import asynccontextmanager
 from routers.auth import auth_router
-from routers.verification import  verify_router
-from routers.anonymous  import anonymous_router
-from routers.chat import chat_router
-from routers.user_setting import setting_router
+from routers.users.verification import  verify_router
+from routers.users.anonymous  import anonymous_router
+from routers.users.chat import chat_router
+from routers.users.user_setting import setting_router
 from routers.general import general_router
-from routers.inbox import inbox_router
-from routers.notification import notification_router
-from routers.room import room_router
-from routers.whisperroom import whisperroom_router
+from routers.users.inbox import inbox_router
+from routers.users.notification import notification_router
+from routers.users.room import room_router
+from routers.users.whisperroom import whisperroom_router
 from routers.image import image_router
-from routers.block_chat import block_chat_router
+from routers.users.block_chat import block_chat_router
 from fastapi.middleware.cors import CORSMiddleware
 
 @asynccontextmanager

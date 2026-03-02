@@ -50,3 +50,13 @@ async def check_user_verified(request: Request, db: AsyncSession = Depends(get_d
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User not verified"
         )
+    
+
+class RoleChecker:
+    def __init__(self, role):
+        self.role = role
+
+    def __call__(self, user_role: dict = Depends(check_user_verified)):
+        if self.role != user_role["role"]:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You do not have access here")
+        return user_role
