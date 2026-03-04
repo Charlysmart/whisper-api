@@ -10,7 +10,7 @@ class Tokens(Base):
     reason = Column(String(255), nullable=False)
     revoked = Column(Boolean, nullable=False, default=False)
     expiry = Column(TIMESTAMP(timezone=True), nullable=False)
-    created_at = Column(DateTime, nullable=False, default=func.now())
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False, default=func.now())
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
 
     anonyuser = relationship("Users")

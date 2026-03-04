@@ -24,7 +24,7 @@ tokenCrud = TokenCRUD()
 @auth_router.post("/signup")
 async def sign_up(user: RegisterUserIn, db: AsyncSession = Depends(get_db)):
     userInfo = user.model_dump()
-    checked_user = await userCrud.get_user(db, "single", "or", **{"username" : userInfo["username"], "email" : userInfo["email"]})
+    checked_user = await userCrud.get_user(db, "or", **{"username" : userInfo["username"], "email" : userInfo["email"]})
 
     # check if the user exists in the database already
     if checked_user:
@@ -38,7 +38,7 @@ async def sign_up(user: RegisterUserIn, db: AsyncSession = Depends(get_db)):
     # generate the site username and makes sure it doesn't exist in the database
     while True:
         custom_username = create_username()
-        check_user = await userCrud.get_user(db, "single", None, **{"custom_username" : custom_username})
+        check_user = await userCrud.get_user(db, None, **{"custom_username" : custom_username})
         if not check_user:
             break
             
@@ -56,7 +56,7 @@ async def sign_up(user: RegisterUserIn, db: AsyncSession = Depends(get_db)):
 # Login page
 @auth_router.post("/login")
 async def login(user: LoginInfo, response: Response, db: AsyncSession = Depends(get_db)):
-    result = await userCrud.get_user(db, "single", None, **{"username" : user.username})
+    result = await userCrud.get_user(db, None, **{"username" : user.username})
 
     if not result:
         raise HTTPException(status_code=401, detail="User not found!")
@@ -110,7 +110,7 @@ async def login(user: LoginInfo, response: Response, db: AsyncSession = Depends(
 @auth_router.post("/admin_signup")
 async def adminSignup(info: AdminRegister, db: AsyncSession = Depends(get_db)):
     userInfo = info.model_dump()
-    checked_user = await userCrud.get_user(db, "single", "or", **{"username" : userInfo["username"]})
+    checked_user = await userCrud.get_user(db, "or", **{"username" : userInfo["username"]})
 
     # check if the user exists in the database already
     if checked_user:
@@ -122,7 +122,7 @@ async def adminSignup(info: AdminRegister, db: AsyncSession = Depends(get_db)):
     # generate the site username and makes sure it doesn't exist in the database
     while True:
         custom_username = create_username()
-        check_user = await userCrud.get_user(db, "single", None, **{"custom_username" : custom_username})
+        check_user = await userCrud.get_user(db, None, **{"custom_username" : custom_username})
         if not check_user:
             break
             

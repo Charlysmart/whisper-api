@@ -1,5 +1,5 @@
-from typing import Optional
-from sqlalchemy import and_, column, or_, select, update
+from typing import Literal, Optional
+from sqlalchemy import and_, asc, column, desc, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.users import Users
@@ -20,7 +20,64 @@ class UserCRUD:
             return False
         return True
     
-    async def get_user(self, db: AsyncSession, fetch: FetchIn = "single", condition: Optional[str] = None, **info):
+    async def get_all_users(self, db: AsyncSession, page: int, order: Literal["desc", "asc"], condition: Optional[str] = None, **info):
+        stmt = select(Users)
+        get_count = select(func.count()).select_from(Users)
+
+        limit = 20
+        skip = (page - 1) * limit
+        order = desc if order == "desc" else asc
+        filters = []
+
+        for field, value in info.items():
+            column = getattr(Users, field, None)
+            if column is not None:
+                filters.append(column == value)
+
+        if condition == "or":
+            stmt = stmt.where(or_(*filters))
+            get_count = get_count.where(or_(*filters))
+        else:
+            stmt = stmt.where(and_(*filters))
+            get_count = get_count.where(and_(*filters))
+            
+        stmt = await db.execute(stmt.order_by(order(Users.created_at)).offset(skip).limit(limit))
+        get_count = await db.execute(get_count)
+        result = stmt.scalars().all()
+        count = get_count.scalar_one()
+        
+        if not result:
+            return None
+        return {
+            "result" : result,
+            "count" : count
+        }
+    
+    async def get_all_specified_users(self, db: AsyncSession, limit: int, order: Literal["desc", "asc"], condition: Optional[str] = None, **info):
+        stmt = select(Users)
+        filters = []
+
+        for field, value in info.items():
+            column = getattr(Users, field, None)
+            if column is not None:
+                filters.append(column == value)
+
+        if condition == "or":
+            stmt = stmt.where(or_(*filters))
+        else:
+            stmt = stmt.where(and_(*filters))
+            
+        order_func = desc if order == "desc" else asc
+        stmt = await db.execute(stmt.order_by(order_func(Users.created_at)).limit(limit))
+        result = stmt.scalars().all()
+        
+        if not result:
+            return None
+        return {
+            "result" : result
+        }
+    
+    async def get_user(self, db: AsyncSession, condition: Optional[str] = None, **info):
         stmt = select(Users)
 
         filters = []
@@ -36,12 +93,7 @@ class UserCRUD:
             stmt = stmt.where(and_(*filters))
             
         stmt = await db.execute(stmt)
-        if fetch == "single":
-            result = stmt.scalar_one_or_none()
-        elif fetch == "all":
-            result = stmt.scalars().all()
-        else:
-            return None
+        result = stmt.scalar_one_or_none()
         
         return result if result else False
     

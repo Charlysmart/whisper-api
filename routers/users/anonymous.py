@@ -22,7 +22,7 @@ inboxCrud = InboxCRUD()
 @anonymous_router.post("/send_anonymous")
 async def send_anonymous(content: AnonymousIn, db: AsyncSession = Depends(get_db), sender: dict = Depends(RoleChecker("user"))):
     anonymous_content = content.model_dump()
-    receiver = await userCrud.get_user(db, "single", None, **{"username" : content.username})
+    receiver = await userCrud.get_user(db, None, **{"username" : content.username})
     if not receiver:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Invalid User! Kindly check the username correctly.")
     if sender["id"] == receiver.id:

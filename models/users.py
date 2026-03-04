@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Boolean, Integer, DateTime, func
+from sqlalchemy import TIMESTAMP, Column, String, Boolean, Integer, func
 from database.connect import Base
 
 class Users(Base):
@@ -11,4 +11,4 @@ class Users(Base):
     role = Column (String, nullable=False, default="user", index=True)
     password = Column(String(255), nullable=False)
     verified = Column(Boolean, nullable=False, default=False)
-    created_at = Column(DateTime, nullable=False, default=func.now())
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False, default=func.now())

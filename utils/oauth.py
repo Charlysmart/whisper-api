@@ -58,5 +58,5 @@ class RoleChecker:
 
     def __call__(self, user_role: dict = Depends(check_user_verified)):
         if self.role != user_role["role"]:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You do not have access here")
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="You do not have access to this page")
         return user_role

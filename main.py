@@ -14,6 +14,8 @@ from routers.users.room import room_router
 from routers.users.whisperroom import whisperroom_router
 from routers.image import image_router
 from routers.users.block_chat import block_chat_router
+from routers.admin.user_management import user_management_router
+from routers.admin.dashboard import dashboard_router
 from fastapi.middleware.cors import CORSMiddleware
 
 @asynccontextmanager
@@ -34,10 +36,6 @@ app.add_middleware(
     allow_headers = ["*"],
 )
 
-@app.get("/")
-def home():
-    return {"message" : "Hello Render"}
-
 app.include_router(auth_router)
 app.include_router(verify_router)
 app.include_router(anonymous_router)
@@ -50,3 +48,5 @@ app.include_router(room_router)
 app.include_router(whisperroom_router)
 app.include_router(image_router)
 app.include_router(block_chat_router)
+app.include_router(dashboard_router)
+app.include_router(user_management_router)
