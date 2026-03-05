@@ -13,7 +13,7 @@ dashboard_router = APIRouter(prefix="/admin", tags=["Admin Dashboard"])
 countCrud = CountCRUD()
 
 @dashboard_router.get("/dashboard")
-async def dashboard(admin: dict = Depends(RoleChecker("admin")), db: AsyncSession = Depends(get_db)):
+async def dashboard(admin: dict = Depends(RoleChecker()), db: AsyncSession = Depends(get_db)):
     # Overview Statistics
 
     start_day = datetime.now(timezone.utc).replace(

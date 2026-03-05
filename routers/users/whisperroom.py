@@ -5,7 +5,7 @@ from database.session import get_db
 from models.whisperroom import Whisperroom
 from services.room import RoomCRUD
 from services.whisperroom import WhisperroomCRUD
-from utils.oauth import RoleChecker, check_token
+from utils.oauth import check_user_verified, check_token
 from utils.time_extract import extract_time
 from utils.socket import connected_room_users
 
@@ -160,7 +160,7 @@ async def post_whisperroom(room_thread: str, websocket: WebSocket):
 
 
 @whisperroom_router.get("/whisperroom/{room_thread}")
-async def get_whisperroom(room_thread: str, user: dict = Depends(RoleChecker("user")), db: AsyncSession = Depends(get_db)):
+async def get_whisperroom(room_thread: str, user: dict = Depends(check_user_verified), db: AsyncSession = Depends(get_db)):
     result = await roomCrud.select_room("single", **{"room_thread" : room_thread})
     
     if not result:
@@ -196,7 +196,7 @@ async def get_whisperroom(room_thread: str, user: dict = Depends(RoleChecker("us
 
 
 @whisperroom_router.get("/reply_whisperroom")
-async def get_whisperroom(id: int, user: dict = Depends(RoleChecker("user")), db: AsyncSession = Depends(get_db)):
+async def get_whisperroom(id: int, user: dict = Depends(check_user_verified), db: AsyncSession = Depends(get_db)):
     result = await whisperroomCrud.get_chat("single", **{"id" : id})
 
     if not result:
@@ -205,7 +205,7 @@ async def get_whisperroom(id: int, user: dict = Depends(RoleChecker("user")), db
 
 
 @whisperroom_router.delete("/leave_room/{thread}")
-async def leave_room(thread, user: dict = Depends(RoleChecker("user")), db: AsyncSession = Depends(get_db)):
+async def leave_room(thread, user: dict = Depends(check_user_verified), db: AsyncSession = Depends(get_db)):
     if thread:
         stmt = await roomCrud.leave_room(thread, user["id"], db)
         if stmt:
@@ -219,7 +219,7 @@ async def leave_room(thread, user: dict = Depends(RoleChecker("user")), db: Asyn
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to leave room!")
 
 @whisperroom_router.delete("/dissolve_room/{thread}")
-async def dissolve_room(thread, user: dict = Depends(RoleChecker("user")), db: AsyncSession = Depends(get_db)):
+async def dissolve_room(thread, user: dict = Depends(check_user_verified), db: AsyncSession = Depends(get_db)):
     if thread:
         status_check = await roomCrud.select_room("single", **{"room_thread" : thread})
         

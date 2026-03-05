@@ -8,7 +8,7 @@ from services.block_chat import BlockChatCRUD
 from services.inbox import InboxCRUD
 from services.notification import NotificationCRUD
 from utils.time_extract import extract_time
-from utils.oauth import RoleChecker, check_token
+from utils.oauth import check_user_verified, check_token
 from utils.socket import connected_chat_users, connected_inbox_users, connected_notify_users
 
 chat_router = APIRouter(prefix="/pages", tags=["Pages"])
@@ -167,7 +167,7 @@ async def reply_chat(websocket: WebSocket):
         connected_chat_users.pop(user["id"], None)
 
 @chat_router.get("/reply_chat")
-async def get_reply_content(id: int, user: dict = Depends(RoleChecker("user")), db: AsyncSession = Depends(get_db)):
+async def get_reply_content(id: int, user: dict = Depends(check_user_verified), db: AsyncSession = Depends(get_db)):
     result = await chatCrud.get_chat("single", **{"id" : id})
 
     if not result:
@@ -175,7 +175,7 @@ async def get_reply_content(id: int, user: dict = Depends(RoleChecker("user")), 
     return result.content
 
 @chat_router.get("/chat/{thread}")
-async def get_chat(thread: str, user: dict = Depends(RoleChecker("user")), db: AsyncSession = Depends(get_db)):
+async def get_chat(thread: str, user: dict = Depends(check_user_verified), db: AsyncSession = Depends(get_db)):
     if not thread:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No thread attached")
     result = await chatCrud.get_chat("all", **{"message_thread" : thread})

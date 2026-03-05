@@ -8,7 +8,7 @@ from services.inbox import InboxCRUD
 from services.notification import NotificationCRUD
 from services.users import UserCRUD
 from utils.generate_message_thread import generate_message_thread
-from utils.oauth import RoleChecker, check_token
+from utils.oauth import check_user_verified, check_token
 from utils.socket import connected_notify_users, connected_anonymous_users
 
 
@@ -20,7 +20,7 @@ inboxCrud = InboxCRUD()
 
 # Send anonymous
 @anonymous_router.post("/send_anonymous")
-async def send_anonymous(content: AnonymousIn, db: AsyncSession = Depends(get_db), sender: dict = Depends(RoleChecker("user"))):
+async def send_anonymous(content: AnonymousIn, db: AsyncSession = Depends(get_db), sender: dict = Depends(check_user_verified)):
     anonymous_content = content.model_dump()
     receiver = await userCrud.get_user(db, None, **{"username" : content.username})
     if not receiver:
@@ -85,7 +85,7 @@ async def send_anonymous(content: AnonymousIn, db: AsyncSession = Depends(get_db
 
 
 @anonymous_router.get("/get_anonymous")
-async def display_anonymous(filter: Filter, page: int = 1, user: dict = Depends(RoleChecker("user")), db: AsyncSession = Depends(get_db)):
+async def display_anonymous(filter: Filter, page: int = 1, user: dict = Depends(check_user_verified), db: AsyncSession = Depends(get_db)):
     result = await anonymousCrud.get_anonymous(db, filter, page, user["id"])
     if result:
         anony = result["Anonymous"]
@@ -137,7 +137,7 @@ async def new_anonymous(websocket: WebSocket):
 
 
 @anonymous_router.patch("/reply_anonymous/{thread}")
-async def reply_message(thread: str, db: AsyncSession = Depends(get_db), user: dict = Depends(RoleChecker("user"))):
+async def reply_message(thread: str, db: AsyncSession = Depends(get_db), user: dict = Depends(check_user_verified)):
     stmt = await anonymousCrud.update_anonymous(db, thread, user["id"], {"replied" : True, "read" : True})
     if not stmt:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Failed to start a chat!")
@@ -170,7 +170,7 @@ async def reply_message(thread: str, db: AsyncSession = Depends(get_db), user: d
     return True
     
 @anonymous_router.patch("/markRead/{thread}")
-async def mark_read(thread: str, user: dict = Depends(RoleChecker("user")), db: AsyncSession = Depends(get_db)):
+async def mark_read(thread: str, user: dict = Depends(check_user_verified), db: AsyncSession = Depends(get_db)):
     if not thread:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No thread attached")
     stmt = await anonymousCrud.update_anonymous(db, thread, user, {"read" : True})

@@ -4,14 +4,14 @@ from database.connect import SessionLocal
 from database.session import get_db
 from schemas.inbox import Filter
 from services.inbox import InboxCRUD
-from utils.oauth import RoleChecker, check_token
+from utils.oauth import check_user_verified, check_token
 from utils.socket import connected_inbox_users
 
 inbox_router = APIRouter(prefix="/pages", tags=["Pages"])
 inboxCrud = InboxCRUD()
 
 @inbox_router.get("/inbox")
-async def inbox(page: int, filter: Filter, user: dict = Depends(RoleChecker("user")), db: AsyncSession = Depends(get_db)):
+async def inbox(page: int, filter: Filter, user: dict = Depends(check_user_verified), db: AsyncSession = Depends(get_db)):
     result = await inboxCrud.get_inbox(db, user["id"], page, filter)
     if result:
         inboxes = result["inbox"]
@@ -61,7 +61,7 @@ async def getNewMessage(websocket: WebSocket):
         print("WebSocket inbox error:", e)
 
 @inbox_router.patch("/mark_inbox_read")
-async def markInboxRead(thread : str, user: dict = Depends(RoleChecker("user")), db: AsyncSession = Depends(get_db)):
+async def markInboxRead(thread : str, user: dict = Depends(check_user_verified), db: AsyncSession = Depends(get_db)):
     stmt = await inboxCrud.mark_inbox_read(db, thread, user["id"])
     if not stmt:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Try again!")

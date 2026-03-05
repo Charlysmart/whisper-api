@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from database.session import get_db
 from services.room import RoomCRUD
-from utils.oauth import RoleChecker
+from utils.oauth import check_user_verified
 from schemas.room import RoomIn, JoinRoomIn
 from sqlalchemy.ext.asyncio import AsyncSession
 from utils.generate_message_thread import generate_room_thread
@@ -11,7 +11,7 @@ room_router = APIRouter(prefix="/pages", tags=["Pages"])
 roomCrud = RoomCRUD()
 
 @room_router.post("/create_room")
-async def create_room(value: RoomIn,  user: dict = Depends(RoleChecker("user")), db: AsyncSession = Depends(get_db)):
+async def create_room(value: RoomIn,  user: dict = Depends(check_user_verified), db: AsyncSession = Depends(get_db)):
     room_thread: str
 
     while True:
@@ -33,7 +33,7 @@ async def create_room(value: RoomIn,  user: dict = Depends(RoleChecker("user")),
     
 
 @room_router.post("/join_room")
-async def join_room(value: JoinRoomIn,  user: dict = Depends(RoleChecker("user")), db: AsyncSession = Depends(get_db)):
+async def join_room(value: JoinRoomIn,  user: dict = Depends(check_user_verified), db: AsyncSession = Depends(get_db)):
     result = await roomCrud.select_room("single", **{"room_thread" : value.thread})
 
     if not result:
@@ -57,7 +57,7 @@ async def join_room(value: JoinRoomIn,  user: dict = Depends(RoleChecker("user")
 
 
 @room_router.get("/joined_rooms")
-async def joined_rooms(user: dict = Depends(RoleChecker("user")), db: AsyncSession = Depends(get_db)):
+async def joined_rooms(user: dict = Depends(check_user_verified), db: AsyncSession = Depends(get_db)):
     result = await roomCrud.select_joined_room("all", **{"user_id" : user["id"]})
 
     if result:

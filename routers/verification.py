@@ -3,6 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from config.setting import Setting
 from sqlalchemy.ext.asyncio import AsyncSession
 from database.session import get_db
+from routers.admin.user_management import UserCrud
+from services.send_email import send_email
 from services.store_token import TokenCRUD
 from services.users import UserCRUD
 from utils.authentication_token import create_access_token, create_refresh_token, verify_token
@@ -41,16 +43,19 @@ async def verify_email(token: str, db: AsyncSession = Depends(get_db), user: dic
 # Resend Verification email
 @verify_router.get("/resend_verification")
 async def resend_verification(db: AsyncSession = Depends(get_db), user: dict = Depends(get_current_user)):
-    updated = await tokenCrud.update_tokens(db, **{"user_id" : user["id"], "reason" : "Email verification token", "revoked" : False})
-    if not updated:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error while logging in!! Kindly try again shortly.")
-    deleted = await tokenCrud.delete_tokens(db, **{"user_id" : user["id"], "reason" : "Email verification token"})
-    if not deleted:
+# Delete old tokens for this reason first
+    deleted = await tokenCrud.delete_tokens(db, **{"user_id": user["id"], "reason": "Email verification token"})
+    if deleted is False:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error while logging in!!! Kindly try again shortly.")
+    result = await UserCrud.get_user(db, None, **{"id" : user["id"]})
     token = generate_verification_token()
-    send_token = await tokenCrud.store_tokens(token, "Email verification token", datetime.now(timezone.utc) + timedelta(minutes=5), user["id"], db)
+    send_token = await tokenCrud.store_tokens(token, "Email verification token", datetime.now(timezone.utc) + timedelta(minutes=10), user["id"], db)
     if not send_token:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Error resending token! Kindly try again")
+    # Send email
+    email_sender = send_email(result.email, result.username, token)
+    if email_sender is False:
+        raise HTTPException(status_code=500, detail="Error sending email.")
     return {
         "message" : "Code resent to your email!"
     }

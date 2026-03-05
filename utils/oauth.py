@@ -53,8 +53,8 @@ async def check_user_verified(request: Request, db: AsyncSession = Depends(get_d
     
 
 class RoleChecker:
-    def __init__(self, role):
-        self.role = role
+    def __init__(self):
+        self.role = "admin"
 
     def __call__(self, user_role: dict = Depends(check_user_verified)):
         if self.role != user_role["role"]:

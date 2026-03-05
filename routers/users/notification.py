@@ -4,14 +4,14 @@ from database.connect import SessionLocal
 from database.session import get_db
 from schemas.notification import Filter
 from services.notification import NotificationCRUD
-from utils.oauth import RoleChecker, check_token
+from utils.oauth import check_user_verified, check_token
 from utils.socket import connected_notify_users
 
 notification_router = APIRouter(prefix="/pages", tags=["Pages"])
 notificationCrud = NotificationCRUD()
 
 @notification_router.get("/get_notification")
-async def notification(filter: Filter, page: int = 1, user: dict = Depends(RoleChecker("user")), db: AsyncSession = Depends(get_db)):
+async def notification(filter: Filter, page: int = 1, user: dict = Depends(check_user_verified), db: AsyncSession = Depends(get_db)):
     result = await notificationCrud.get_notification(db, filter, page, user["id"])
 
     if result:
@@ -60,7 +60,7 @@ async def new_notification(websocket: WebSocket):
         print("WebSocket notification error:", e)
 
 @notification_router.patch("/markRead")
-async def mark_read(id: int, user: dict = Depends(RoleChecker("user")), db: AsyncSession = Depends(get_db)):
+async def mark_read(id: int, user: dict = Depends(check_user_verified), db: AsyncSession = Depends(get_db)):
     if not id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No Id attached")
     read = await notificationCrud.mark_read(id, db)

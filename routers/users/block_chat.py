@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from database.session import get_db
 from services.anonymous import AnonymousCRUD
 from services.block_chat import BlockChatCRUD
-from utils.oauth import RoleChecker
+from utils.oauth import check_user_verified
 from utils.socket import connected_chat_users
 
 
@@ -12,7 +12,7 @@ block_chat_router = APIRouter(prefix="/pages", tags=["Pages"])
 blockChatCrud = BlockChatCRUD()
 anonymousCrud = AnonymousCRUD()
 @block_chat_router.get("/block_chat")
-async def block_chat(thread: str, user: dict = Depends(RoleChecker("user")), db: AsyncSession = Depends(get_db)):
+async def block_chat(thread: str, user: dict = Depends(check_user_verified), db: AsyncSession = Depends(get_db)):
     check_thread = await anonymousCrud.get_single_anonymous(**{"message_thread" : thread})
     if not check_thread:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Message thread not found")

@@ -3,7 +3,7 @@ from config.setting import Setting
 from database.connect import Base, engine
 from contextlib import asynccontextmanager
 from routers.auth import auth_router
-from routers.users.verification import  verify_router
+from routers.verification import  verify_router
 from routers.users.anonymous  import anonymous_router
 from routers.users.chat import chat_router
 from routers.users.user_setting import setting_router

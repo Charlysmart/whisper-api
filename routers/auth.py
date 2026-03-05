@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from models.tokens import Tokens
 from schemas.users import AdminRegister, LoginInfo, RegisterUserIn
 from sqlalchemy.ext.asyncio import AsyncSession
+from services.send_email import send_email
 from services.store_token import TokenCRUD
 from services.users import UserCRUD
 from utils.hash_password import hash_password, verify_password
@@ -89,22 +90,33 @@ async def login(user: LoginInfo, response: Response, db: AsyncSession = Depends(
     )
 
     if not result.verified:
-        updated = await tokenCrud.update_tokens(db, **{"user_id" : result.id, "reason" : "Email verification token", "revoked" : False})
-        if not updated:
+        # Delete old tokens for this reason first
+        deleted = await tokenCrud.delete_tokens(db, **{"user_id": result.id, "reason": "Email verification token"})
+        if deleted is False:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error while logging in!!! Kindly try again shortly.")
-        deleted = await tokenCrud.delete_tokens(db, **{"user_id" : result.id, "reason" : "Email verification token"})
-        if not deleted:
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error while logging in!! Kindly try again shortly.")
+
+        # Generate new verification token
         verification_token = generate_verification_token()
-        store_verification_token = await tokenCrud.store_tokens(verification_token, "Email verification token", datetime.now(timezone.utc) + timedelta(minutes=5), result.id, db)
-        if not store_verification_token:
-            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Error while logging in! Kindly try again shortly.")
-        return {
-            "message" : "Verification sent to email! Kindly check your email for your token"
-        }
-    return {
-        "message" : "Login Successful!"
-    }
+
+        # Store token in DB with expiry
+        store_verification_token = await tokenCrud.store_tokens(
+            verification_token,
+            "Email verification token",
+            datetime.now(timezone.utc) + timedelta(minutes=10),
+            result.id,
+            db
+        )
+        if store_verification_token is False:
+            raise HTTPException(status_code=500, detail="Error storing verification token.")
+
+        # Send email
+        email_sender = send_email(result.email, result.username, verification_token)
+        if email_sender is False:
+            raise HTTPException(status_code=500, detail="Error sending email.")
+
+        return {"message": "Verification sent to email! Kindly check your email for your token."}
+
+    return {"message": "Login Successful!"}
 
 
 @auth_router.post("/admin_signup")

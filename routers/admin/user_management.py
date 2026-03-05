@@ -11,7 +11,7 @@ user_management_router = APIRouter(prefix="/admin", tags=["Admin Dashboard"])
 UserCrud = UserCRUD()
 
 @user_management_router.get("/user_management")
-async def user_management(filter: Literal["verified", "unverified", "all"], page: int, order: Literal["desc", "asc"], admin: dict = Depends(RoleChecker("admin")), db: AsyncSession = Depends(get_db)):
+async def user_management(filter: Literal["verified", "unverified", "all"], page: int, order: Literal["desc", "asc"], admin: dict = Depends(RoleChecker()), db: AsyncSession = Depends(get_db)):
     filter = True if filter == "verified" else False if filter == "unverified" else None
     if not filter:
         user = await UserCrud.get_all_users(db, page, order, None, **{"role" : "user"})
