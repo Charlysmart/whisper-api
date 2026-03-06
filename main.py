@@ -19,9 +19,13 @@ from routers.admin.dashboard import dashboard_router
 from fastapi.middleware.cors import CORSMiddleware
 
 @asynccontextmanager
-async def lifespan(app:FastAPI):
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+async def lifespan(app: FastAPI):
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        print("Database connected successfully")
+    except Exception as e:
+        print("Database connection failed on startup:", e)
     yield
 
 app = FastAPI(lifespan=lifespan)
@@ -35,6 +39,10 @@ app.add_middleware(
     allow_methods = ["*"],
     allow_headers = ["*"],
 )
+
+@app.get("/")
+def root():
+    return {"message": "API is running"}
 
 app.include_router(auth_router)
 app.include_router(verify_router)
