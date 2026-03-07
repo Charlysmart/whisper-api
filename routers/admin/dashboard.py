@@ -23,7 +23,6 @@ async def dashboard(admin: dict = Depends(RoleChecker()), db: AsyncSession = Dep
         second=0,
         microsecond=0
     )
-    Users.created_at
 
     end_day = start_day + timedelta(days=1)
     total_users, total_anonymous, new_users, new_anonymous = await asyncio.gather(
