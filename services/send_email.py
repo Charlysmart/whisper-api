@@ -10,7 +10,7 @@ def send_email(email, username, code):
 
     email_data = (
         EmailBuilder()
-        .from_email("no-reply@test-nrw7gymwq8rg2k8e.mlsender.net", "Whisperbin")
+        .from_email("no-reply@whisperbin.shop", "Whisperbin")
         .to_many([
             {
                 "email": email,
