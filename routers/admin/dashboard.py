@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends
 from database.session import get_db
@@ -25,34 +26,41 @@ async def dashboard(admin: dict = Depends(RoleChecker()), db: AsyncSession = Dep
     Users.created_at
 
     end_day = start_day + timedelta(days=1)
-    total_users = await countCrud.get_count(Users)
-    total_anonymous = await countCrud.get_count(Anonymous)
-    new_users = await countCrud.get_count(Users, compare=Users.created_at, start_date=start_day, end_date=end_day)
-    new_anonymous = await countCrud.get_count(Anonymous, compare=Anonymous.sent_at, start_date=start_day, end_date=end_day)
+    total_users, total_anonymous, new_users, new_anonymous = await asyncio.gather(
+        countCrud.get_count(Users),
+        countCrud.get_count(Anonymous),
+        countCrud.get_count(Users, compare=Users.created_at, start_date=start_day, end_date=end_day),
+        countCrud.get_count(Anonymous, compare=Anonymous.sent_at, start_date=start_day, end_date=end_day)
+    )
 
 
     # Recent Users
     recent_users = await UserCrud.get_all_specified_users(db, 5, "desc", None, **{"role" : "user"})
     recent = []
-
-    if not recent_users:
-        return recent
     
-    for u in recent_users["result"]:
-        recent.append({
-            "custom_username" : u.custom_username,
-            "time_joined" : u.created_at
-        })
+    if recent_users and recent_users.get("result"):
+        recent = [
+            {
+                "custom_username": u.custom_username,
+                "time_joined": u.created_at
+            }
+            for u in recent_users["result"]
+        ]
 
     # Chart statsitics
     new_signups = await countCrud.get_statistics(Users, Users.created_at)
     new_messages = await countCrud.get_statistics(Anonymous, Anonymous.sent_at)
+
+    # Ensure charts always return arrays
+    new_signups = new_signups or []
+    new_messages = new_messages or []
+
     return {
         "statistics" : {
-            "total_users" : total_users,
-            "total_anonymous" : total_anonymous,
-            "new_users" : new_users,
-            "new_anonymous" : new_anonymous,
+            "total_users" : total_users or 0,
+            "total_anonymous" : total_anonymous or 0,
+            "new_users" : new_users or 0,
+            "new_anonymous" : new_anonymous or 0,
         },
         "recent_users" : recent,
         "chart_stat" : {
