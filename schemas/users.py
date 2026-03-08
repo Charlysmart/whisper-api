@@ -15,12 +15,10 @@ class RegisterUserIn(BaseModel):
     confirm_password : str
 
     @model_validator(mode='after')
-    def validate_password(self):
+    def validate_info(self):
+        self.username = self.username.lower()
         if self.password != self.confirm_password:
             raise ValueError("Passwords do not match!")
-        return self
-    def convert_username(self):
-        self.username = self.username.lower()
         return self
     
 class AdminRegister(BaseModel):
