@@ -11,6 +11,7 @@ class Setting(BaseSettings):
     httponly : bool
     samesite: str
     secure : bool
+    sendiapi: str
 
     class Config:
         env_file = ".env"

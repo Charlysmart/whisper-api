@@ -4,7 +4,7 @@ from config.setting import Setting
 from sqlalchemy.ext.asyncio import AsyncSession
 from database.session import get_db
 from routers.admin.user_management import UserCrud
-from services.send_email import send_email
+from services.send_mail import send_verification_email
 from services.store_token import TokenCRUD
 from services.users import UserCRUD
 from utils.authentication_token import create_access_token, create_refresh_token, verify_token
@@ -53,7 +53,7 @@ async def resend_verification(db: AsyncSession = Depends(get_db), user: dict = D
     if not send_token:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Error resending token! Kindly try again")
     # Send email
-    email_sender = send_email(result.email, result.username, token)
+    email_sender = send_verification_email(result.email, result.username, token)
     if email_sender is False:
         raise HTTPException(status_code=500, detail="Error sending email.")
     return {
@@ -122,3 +122,5 @@ async def refresh_token(request: Request, response:Response, db: AsyncSession = 
     return {
         "message": "Token refreshed successfully"
     }
+
+# async def forgot_password():

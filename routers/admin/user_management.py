@@ -1,5 +1,5 @@
 from typing import Literal
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from database.session import get_db
 from services.users import UserCRUD
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -34,4 +34,3 @@ async def user_management(filter: Literal["verified", "unverified", "all"], page
         "users" : result,
         "count" : user["count"]
     }
-        

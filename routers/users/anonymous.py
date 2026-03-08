@@ -173,7 +173,7 @@ async def reply_message(thread: str, db: AsyncSession = Depends(get_db), user: d
 async def mark_read(thread: str, user: dict = Depends(check_user_verified), db: AsyncSession = Depends(get_db)):
     if not thread:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No thread attached")
-    stmt = await anonymousCrud.update_anonymous(db, thread, user, {"read" : True})
+    stmt = await anonymousCrud.update_anonymous(db, thread, user["id"], {"read" : True})
     if not stmt:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to mark as read!")
     return True

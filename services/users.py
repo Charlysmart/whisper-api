@@ -1,5 +1,5 @@
 from typing import Literal, Optional
-from sqlalchemy import and_, asc, column, desc, func, or_, select, update
+from sqlalchemy import and_, asc, column, delete, desc, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from models.users import Users
