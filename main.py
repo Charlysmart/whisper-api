@@ -17,6 +17,7 @@ from routers.users.block_chat import block_chat_router
 from routers.admin.user_management import user_management_router
 from routers.admin.dashboard import dashboard_router
 from fastapi.middleware.cors import CORSMiddleware
+import requests
 
 @asynccontextmanager
 async def lifespan(app:FastAPI):
@@ -36,6 +37,23 @@ app.add_middleware(
     allow_headers = ["*"],
 )
 
+@app.get("/send")
+def send_email(email: str):
+    response = requests.post(
+        "https://app.usesendi.com/api/emails",
+        headers={
+            "Authorization": f"Bearer {setting.sendiapi}",
+            "Content-Type": "application/json"
+        },
+        json={
+            "from": "noreply@whisperbin.shop",
+            "to": [email],
+            "subject": "Hello from Sendi",
+            "html": "<p>It just works.</p>"
+        }
+    )
+
+    print(response.json())
 app.include_router(auth_router)
 app.include_router(verify_router)
 app.include_router(anonymous_router)
