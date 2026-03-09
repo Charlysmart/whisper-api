@@ -25,6 +25,7 @@ def send_verification_email(email, username, code):
             }
         )
         if response.status_code == 200:
+            print("code: ", response.json())
             return True
         else:
             print(response.text)
