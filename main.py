@@ -42,7 +42,7 @@ def send_email(email: str):
     response = requests.post(
         "https://app.usesendi.com/api/emails",
         headers={
-            "Authorization": "Bearer snd_your_api_key",
+            "Authorization": f"Bearer {setting.sendiapi}",
             "Content-Type": "application/json"
         },
         json={
