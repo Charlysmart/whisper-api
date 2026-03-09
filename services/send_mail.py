@@ -17,7 +17,7 @@ def send_verification_email(email, username, code):
                 "from": "WhisperBin <noreply@whisperbin.shop>",
                 "to" : [email],
                 "template_id" : template_id,
-                "templateVariables" : {
+                "template_variables" : {
                     "verification_code": code,
                     "website_url": "https://whisperbin.vercel.app",
                     "username": username
