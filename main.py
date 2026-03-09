@@ -46,7 +46,7 @@ def send_email(email: str):
             "Content-Type": "application/json"
         },
         json={
-            "from": "you@yourdomain.com",
+            "from": "noreply@whisperbin.shop",
             "to": [email],
             "subject": "Hello from Sendi",
             "html": "<p>It just works.</p>"
