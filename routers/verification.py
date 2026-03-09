@@ -4,7 +4,7 @@ from config.setting import Setting
 from sqlalchemy.ext.asyncio import AsyncSession
 from database.session import get_db
 from routers.admin.user_management import UserCrud
-from services.send_mail import send_verification_email
+from services.send_mail import SendEmail
 from services.store_token import TokenCRUD
 from services.users import UserCRUD
 from utils.authentication_token import create_access_token, create_refresh_token, verify_token
@@ -16,6 +16,7 @@ from utils.verification_token import generate_verification_token
 verify_router = APIRouter(prefix="/auth", tags=["Authentication"])
 setting = Setting()
 tokenCrud = TokenCRUD()
+emailSender = SendEmail()
 
 # Verify email page
 @verify_router.post("/verify_email")
@@ -53,7 +54,7 @@ async def resend_verification(db: AsyncSession = Depends(get_db), user: dict = D
     if not send_token:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Error resending token! Kindly try again")
     # Send email
-    email_sender = send_verification_email(result.email, result.username, token)
+    email_sender = emailSender.send_verification_email(result.email, result.username, token)
     if email_sender is False:
         raise HTTPException(status_code=500, detail="Error sending email.")
     return {
@@ -73,7 +74,10 @@ async def refresh_token(request: Request, response:Response, db: AsyncSession = 
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Refresh token missing. Kindly re-login."
         )
+    print("Token: ", token)
+    print("Hashed: ", hash_tokens(token))
     result = await tokenCrud.get_tokens(db, hash_tokens(token))
+    print("Result: ", result)
 
     # check if it exists in database or it is expired
     if (not result) or result.expiry < datetime.now(timezone.utc):
@@ -96,7 +100,6 @@ async def refresh_token(request: Request, response:Response, db: AsyncSession = 
     new_refresh_token = create_refresh_token({"id": verified["id"], "username" : verified["username"], "role": verified["role"]})
 
     # update the database with the new refresh token and mark the old refresh token true
-    await tokenCrud.update_tokens(db, **{"token" : hash_tokens(token)})
     await tokenCrud.delete_tokens(db, **{"token" : hash_tokens(token)})
     update_refresh = await tokenCrud.store_tokens(hash_tokens(new_refresh_token), "refresh token", datetime.now(timezone.utc) + timedelta(days=7), verified["id"], db)
     
@@ -123,4 +126,12 @@ async def refresh_token(request: Request, response:Response, db: AsyncSession = 
         "message": "Token refreshed successfully"
     }
 
-# async def forgot_password():
+@verify_router.post("/get_username")
+async def forgot_password(username: str, db: AsyncSession = Depends(get_db)):
+    check_user = await UserCrud.get_user(db, None, username=username)
+    if not check_user:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Username not found")
+    token = generate_verification_token()
+    store_code = await tokenCrud.store_tokens(token, "password reset", datetime.now(timezone.utc) + timedelta(minutes=10), check_user.id, db)
+    if not store_code:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Could not generate reset link at the moment. Kindly try again later")

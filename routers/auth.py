@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from models.tokens import Tokens
 from schemas.users import AdminRegister, LoginInfo, RegisterUserIn
 from sqlalchemy.ext.asyncio import AsyncSession
-from services.send_mail import send_verification_email
+from services.send_mail import SendEmail
 from services.store_token import TokenCRUD
 from services.users import UserCRUD
 from utils.hash_password import hash_password, verify_password
@@ -21,6 +21,7 @@ auth_router = APIRouter(prefix="/auth", tags=["Authentication"])
 setting = Setting()
 userCrud = UserCRUD()
 tokenCrud = TokenCRUD()
+emailSend = SendEmail()
 
 @auth_router.post("/signup")
 async def sign_up(user: RegisterUserIn, db: AsyncSession = Depends(get_db)):
@@ -110,7 +111,7 @@ async def login(user: LoginInfo, response: Response, db: AsyncSession = Depends(
             raise HTTPException(status_code=500, detail="Error storing verification token.")
 
         # Send email
-        email_sender = send_verification_email(result.email, result.username, verification_token)
+        email_sender = emailSend.send_verification_email(result.email, result.username, verification_token)
         if email_sender is False:
             raise HTTPException(status_code=500, detail="Error sending email.")
 

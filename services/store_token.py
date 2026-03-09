@@ -1,4 +1,3 @@
-from fastapi import HTTPException, status
 from sqlalchemy import delete, select, update
 from models.tokens import Tokens
 from sqlalchemy.ext.asyncio import AsyncSession

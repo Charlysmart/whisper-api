@@ -84,7 +84,7 @@ class RoomCRUD:
         return True
     
     async def leave_room(self, thread: str, user: int, db: AsyncSession):
-        await db.execute(delete(JoinRoom).where(JoinRoom.room_thread == thread, JoinRoom.user_id == user["id"]))
+        await db.execute(delete(JoinRoom).where(JoinRoom.room_thread == thread, JoinRoom.user_id == user))
         try:
             await db.commit()
         except:
