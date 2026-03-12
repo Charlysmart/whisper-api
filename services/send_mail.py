@@ -4,7 +4,9 @@ from config.setting import Setting
 
 SENDIAPI = Setting().sendiapi
 class SendEmail:
-    def send_verification_email(email, username, code):
+    def __init__(self):
+        pass 
+    def send_verification_email(self, email, username, code):
         template_id = "5e7fe193-9051-47c9-977c-b44f6c81c96b"
         try:
             response = requests.post(
