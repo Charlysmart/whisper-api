@@ -27,6 +27,7 @@ class AdminRegister(BaseModel):
     role : Literal["admin"]
     password : str
     
+    @model_validator(mode='after')
     def convert_username(self):
         self.username = self.username.lower()
         return self
