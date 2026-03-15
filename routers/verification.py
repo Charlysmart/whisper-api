@@ -4,7 +4,6 @@ from config.setting import Setting
 from sqlalchemy.ext.asyncio import AsyncSession
 from database.session import get_db
 from routers.admin.user_management import UserCrud
-from schemas.reset_password import ResetPassword
 from services.send_mail import SendEmail
 from services.store_token import TokenCRUD
 from services.users import UserCRUD
@@ -127,48 +126,3 @@ async def refresh_token(request: Request, response:Response, db: AsyncSession = 
     return {
         "message": "Token refreshed successfully"
     }
-
-@verify_router.get("/get_username")
-async def forgot_password(username: str, db: AsyncSession = Depends(get_db)):
-    check_user = await UserCrud.get_user(db, None, username=username)
-    if not check_user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Username not found")
-    token = generate_verification_token()
-    store_code = await tokenCrud.store_tokens(token, "password reset", datetime.now(timezone.utc) + timedelta(minutes=10), check_user.id, db)
-    if not store_code:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Could not generate reset link at the moment. Kindly try again later")
-    
-@verify_router.get("check_otp")
-async def check_otp(token: str, db: AsyncSession = Depends(get_db)):
-    check_token = await tokenCrud.get_tokens(db, token)
-    if not check_token:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Incorrect OTP")
-    if check_token.revoked:
-        raise HTTPException(status_code=status.HTTP_401_NOT_FOUND, detail="OTP already used")
-    if datetime.now(timezone.utc) > check_token.expiry:
-        raise HTTPException(status_code=status.HTTP_401, detail="OTP expired")
-    return True
-
-@verify_router.post("reset_password")
-async def reset_password(info: ResetPassword, token: str, db: AsyncSession = Depends(get_db)):
-    check_token = await tokenCrud.get_tokens(db, token)
-    if not check_token:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Incorrect OTP")
-    if check_token.revoked:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="OTP already used")
-    if datetime.now(timezone.utc) > check_token.expiry:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="OTP expired")
-    
-    values = {
-        "password" : hash_password(info.password)
-    }
-
-    updated_value = await UserCrud.update_user(db=db, where={"id" : check_token.id}, info=values)
-
-    if not updated_value:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Failed to reset password")
-    
-    return {
-        "message" : "Password resetted successfully"
-    }
-

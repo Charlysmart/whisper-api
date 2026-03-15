@@ -1,7 +1,6 @@
 from typing import Literal, Optional
 from sqlalchemy import and_, asc, column, delete, desc, func, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-
 from models.users import Users
 from schemas.users import FetchIn
 
@@ -97,19 +96,21 @@ class UserCRUD:
         
         return result if result else False
     
-    async def update_user(self, db: AsyncSession, where: dict, info: dict):
+    async def update_user(self, db: AsyncSession, where: dict, **info):
         stmt = update(Users)
 
         for field, value in where.items():
             column = getattr(Users, field, None)
-            if not column:
+            if column is None:
                 continue
             stmt = stmt.where(column == value)
-            
-        stmt = await db.execute(stmt.values(info))
+
+        stmt = stmt.values(**info)
+
         try:
+            result = await db.execute(stmt)
             await db.commit()
-        except:
+        except Exception:
             await db.rollback()
             return False
         return True
