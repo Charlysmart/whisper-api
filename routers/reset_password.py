@@ -29,22 +29,26 @@ async def forgot_password(username: str, db: AsyncSession = Depends(get_db)):
     if not send_code:
         raise HTTPException(status_code=500, detail="Error sending OTP.")
     return {
-        "message" : f"OTP has been sent to your email!{check_user.id}"
+        "message" : f"OTP has been sent to your email!"
     }
     
-@reset_password_router.get("check_otp")
+@reset_password_router.get("/check_otp")
 async def check_otp(token: str, db: AsyncSession = Depends(get_db)):
+    if not token:
+        return False
     check_token = await tokenCrud.get_tokens(db, token)
     if not check_token:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Incorrect OTP")
     if check_token.revoked:
-        raise HTTPException(status_code=status.HTTP_401_NOT_FOUND, detail="OTP already used")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="OTP already used")
     if datetime.now(timezone.utc) > check_token.expiry:
         raise HTTPException(status_code=status.HTTP_401, detail="OTP expired")
     return True
 
-@reset_password_router.post("reset_password")
-async def reset_password(info: ResetPassword, token: str, db: AsyncSession = Depends(get_db)):
+@reset_password_router.post("/reset_password")
+async def reset_password(token: str, info: ResetPassword, db: AsyncSession = Depends(get_db)):
+    if not token:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Incorrect OTP")
     check_token = await tokenCrud.get_tokens(db, token)
     if not check_token:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Incorrect OTP")
