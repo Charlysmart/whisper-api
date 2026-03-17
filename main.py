@@ -37,6 +37,10 @@ app.add_middleware(
     allow_headers = ["*"],
 )
 
+@app.get("/")
+def root():
+    return {"status": "ok"}
+
 app.include_router(auth_router)
 app.include_router(verify_router)
 app.include_router(anonymous_router)
