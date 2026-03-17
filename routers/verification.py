@@ -35,7 +35,7 @@ async def verify_email(token: str, db: AsyncSession = Depends(get_db), user: dic
     updated = await tokenCrud.update_tokens(db, **{"token": token})
     if updated:
         await tokenCrud.delete_tokens(db, **{"token" : token})
-        await UserCRUD().update_user(db, {"id" : result.user_id}, {"verified" : True})
+        await UserCRUD().update_user(db, {"id" : result.user_id}, verified=True)
     else:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Kindly try again shortly.")
     return {
