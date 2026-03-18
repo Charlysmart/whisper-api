@@ -1,3 +1,4 @@
+import asyncio
 from fastapi import FastAPI
 from config.setting import Setting
 from database.connect import Base, engine
@@ -19,10 +20,18 @@ from routers.admin.user_management import user_management_router
 from routers.admin.dashboard import dashboard_router
 from fastapi.middleware.cors import CORSMiddleware
 
+from utils.token_clearer import periodic_token_cleanup
+
 @asynccontextmanager
 async def lifespan(app:FastAPI):
+    # Create tables
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+
+    # Start background task for token cleanup
+    asyncio.create_task(periodic_token_cleanup(3600))  # every hour
+
+    # Yield control to FastAPI
     yield
 
 app = FastAPI(lifespan=lifespan)

@@ -27,6 +27,8 @@ class AnonymousCRUD:
         stmt = select(Anonymous).where(Anonymous.receiver_id == user_id)
         if filter == "unread":
             stmt = stmt.where(Anonymous.read == False)
+        elif filter == "replied":
+            stmt = stmt.where(Anonymous.replied == True)
         stmt = await db.execute(stmt.order_by(Anonymous.sent_at.desc()).offset(skip).limit(limit))            
         result = stmt.scalars().all()
 
