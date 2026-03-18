@@ -64,7 +64,6 @@ async def login(user: LoginInfo, response: Response, db: AsyncSession = Depends(
         raise HTTPException(status_code=401, detail="User not found!")
     
     if not verify_password(result.password, user.password):
-        print(f"in: {result.password} out: {user.password}")
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect Password!")
     
     access_token = create_access_token({"id": result.id, "username": result.username, "role": result.role})
@@ -72,7 +71,6 @@ async def login(user: LoginInfo, response: Response, db: AsyncSession = Depends(
     store_refresh_token = await tokenCrud.store_tokens(hash_tokens(refresh_token), "refresh token", datetime.now(timezone.utc) + timedelta(days=7), result.id, db)
     if not store_refresh_token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=f"Error while logging in! Kindly try again shortly.")
-    print(refresh_token, access_token)
     
     response.set_cookie(
         key="refresh_token",

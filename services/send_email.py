@@ -34,8 +34,6 @@ def send_email(email, username, code):
 
     try:
         response = ms.emails.send(email_data)
-        print("Email sent! Status code:", response.status_code)
         return True
     except Exception as e:
-        print("MailerSend error:", e)
         return False

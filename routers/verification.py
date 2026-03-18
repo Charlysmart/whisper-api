@@ -75,10 +75,7 @@ async def refresh_token(request: Request, response:Response, db: AsyncSession = 
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Refresh token missing. Kindly re-login."
         )
-    print("Token: ", token)
-    print("Hashed: ", hash_tokens(token))
     result = await tokenCrud.get_tokens(db, hash_tokens(token))
-    print("Result: ", result)
 
     # check if it exists in database or it is expired
     if (not result) or result.expiry < datetime.now(timezone.utc):

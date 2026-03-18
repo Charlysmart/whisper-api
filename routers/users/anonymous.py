@@ -143,7 +143,6 @@ async def reply_message(thread: str, db: AsyncSession = Depends(get_db), user: d
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Failed to start a chat!")
     transfer = await anonymousCrud.get_single_anonymous(**{"message_thread" : thread})
     set_chat = await inboxCrud.send_chat(**{"message_thread" : thread, "sender_id" : transfer.sender_id, "content" : transfer.content, "read" : True, "sent_at" : transfer.sent_at, "receiver_id" : transfer.receiver_id})
-    print("chat: ", set_chat)
 
     if not set_chat:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to initialize chat!")

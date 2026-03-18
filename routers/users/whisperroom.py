@@ -95,8 +95,6 @@ async def post_whisperroom(room_thread: str, websocket: WebSocket):
                     image=msg_data.get("image"),
                     reply_to=msg_data.get("reply_to")
                 )
-
-                print("Chat: ", chat)
                 if not chat:
                     await websocket.send_json({
                         "type": "error",
