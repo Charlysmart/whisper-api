@@ -10,6 +10,7 @@ class Chat(Base):
     receiver_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     content = Column(String, nullable=True)
     image = Column(String, nullable=True)
+    public_id = Column(String, nullable=True)
     read = Column(Boolean, default=False, nullable=False)
     reply_to = Column(Integer, ForeignKey("chat.id"))
     sent_at = Column(TIMESTAMP(timezone=True), server_default=func.now())

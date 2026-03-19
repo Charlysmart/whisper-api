@@ -13,6 +13,8 @@ class Setting(BaseSettings):
     secure : bool
     sendiapi : str
     sitename : str
+    cloudinarysecret : str
+    cloudinaryapi : str
 
     class Config:
         env_file = ".env"

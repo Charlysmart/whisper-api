@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from database.connect import SessionLocal
 from database.session import get_db
 from models.whisperroom import Whisperroom
+from services.image_uploader import CloudinaryService
 from services.room import RoomCRUD
 from services.whisperroom import WhisperroomCRUD
 from utils.oauth import check_user_verified, check_token
@@ -93,6 +94,7 @@ async def post_whisperroom(room_thread: str, websocket: WebSocket):
                     content=msg_data.get("content"),
                     room_thread=room_thread,
                     image=msg_data.get("image"),
+                    public_id=msg_data.get("public_id"),
                     reply_to=msg_data.get("reply_to")
                 )
                 if not chat:
@@ -133,6 +135,13 @@ async def post_whisperroom(room_thread: str, websocket: WebSocket):
                             })
                 
             elif msg_type == "delete":
+                values = {
+                    "id" : msg_data,
+                    "sender_id" : user_id
+                }
+                check_message = await whisperroomCrud.get_chat("single", **values)
+                if check_message.image:
+                    CloudinaryService.deleteImage(check_message.public_id)
                 deleted = await whisperroomCrud.delete_chat(msg_data, user_id)
                 if deleted:
                     await websocket.send_json({

@@ -1,5 +1,6 @@
 import asyncio
 from fastapi import FastAPI
+import config.cloudinary_config
 from config.setting import Setting
 from database.connect import Base, engine
 from contextlib import asynccontextmanager

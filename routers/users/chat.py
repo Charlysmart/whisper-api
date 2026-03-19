@@ -5,6 +5,7 @@ from database.session import get_db
 from models.chat import Chat
 from services.anonymous import AnonymousCRUD
 from services.block_chat import BlockChatCRUD
+from services.image_uploader import CloudinaryService
 from services.inbox import InboxCRUD
 from services.notification import NotificationCRUD
 from utils.time_extract import extract_time
@@ -81,9 +82,10 @@ async def reply_chat(websocket: WebSocket):
                     
                 message_handler = await chatCrud.send_chat(
                     content = msg_data.get("message", ""),
-                message_thread = msg_data["message_thread"], 
+                    message_thread = msg_data["message_thread"], 
                     sender_id = user["id"], 
                     image = msg_data.get("image"),
+                    public_id = msg_data.get("public_id"),
                     receiver_id = receiver, 
                     reply_to = msg_data.get("reply_to")
                 )
@@ -149,6 +151,13 @@ async def reply_chat(websocket: WebSocket):
                 message_id = msg_data
                 if not message_id:
                     continue
+                values = {
+                    "id" : message_id,
+                    "sender_id" : id
+                }
+                check_message = await chatCrud.get_chat("single", **values)
+                if check_message.image:
+                    CloudinaryService.deleteImage(check_message.public_id)
                 await chatCrud.delete_chat(message_id, id)
                 await websocket.send_json({
                     "type": "delete",
