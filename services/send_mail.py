@@ -27,10 +27,11 @@ class SendEmail:
                     }
                 }
             )
-            if response.status_code == 200:
+            if response.ok:
+                print("Sent:", response.json()["id"])
                 return True
             else:
-                print(response.text)
+                print("Error:", response.json()["error"])
                 return False
         except Exception as e:
             print("Error: ", e)
