@@ -40,7 +40,7 @@ async def drop_anonymous(username: str = "me"):
         <meta name="twitter:image" content="https://res.cloudinary.com/dcrpmvykk/image/upload/v1774090729/unnamed_mg0stn.png" />
 
         <!-- Smooth redirect (no visible page) -->
-        <meta http-equiv="refresh" content="0; url=https://whisperbin.shop/send_message/{user_display}" />
+        <meta http-equiv="refresh" content="0; url=https://www.whisperbin.shop/send_message/{user_display}" />
 
     </head>
     </html>
