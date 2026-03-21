@@ -31,7 +31,7 @@ async def send_message(username: str = "me"):
         <meta property="og:image" content="https://res.cloudinary.com/dcrpmvykk/image/upload/v1774090729/unnamed_mg0stn.png" />
         <meta property="og:url" content="https://whisperbin.shop/drop_anonymous/{user_display}" />
         <meta property="og:type" content="website" />
-        <meta http-equiv="refresh" content="0; url=/https://whisperbin.shop/send_messages/{user_display}" />
+        <meta http-equiv="refresh" content="0; url=/https://whisperbin.shop/send_message/{user_display}" />
         <meta property="og:site_name" content="WhisperBin" />
 
         <!-- Twitter -->
