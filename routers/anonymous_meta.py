@@ -1,11 +1,11 @@
-from fastapi import FastAPI
+from fastapi import APIRouter
 from fastapi.responses import HTMLResponse
 import html
 
-app = FastAPI()
+metaredirect_router = APIRouter(prefix="/pages", tags=["Pages"])
 
-@app.get("/send_anonymous/{username}", response_class=HTMLResponse)
-@app.get("/send_anonymous", response_class=HTMLResponse)  # 👈 handles no username
+@metaredirect_router.get("/send_anonymous/{username}", response_class=HTMLResponse)
+@metaredirect_router.get("/send_anonymous", response_class=HTMLResponse)  # 👈 handles no username
 async def send_message(username: str = "me"):
     
     user_display = html.escape(username)
