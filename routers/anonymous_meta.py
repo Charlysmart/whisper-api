@@ -4,8 +4,8 @@ import html
 
 metaredirect_router = APIRouter(prefix="/pages", tags=["Pages"])
 
-@metaredirect_router.get("/send_anonymous/{username}", response_class=HTMLResponse)
-@metaredirect_router.get("/send_anonymous", response_class=HTMLResponse)  # 👈 handles no username
+@metaredirect_router.get("/drop_anonymous/{username}", response_class=HTMLResponse)
+@metaredirect_router.get("/drop_anonymous", response_class=HTMLResponse)  # 👈 handles no username
 async def send_message(username: str = "me"):
     
     user_display = html.escape(username)
@@ -29,7 +29,7 @@ async def send_message(username: str = "me"):
         <meta property="og:title" content="{title}" />
         <meta property="og:description" content="{description}" />
         <meta property="og:image" content="https://res.cloudinary.com/dcrpmvykk/image/upload/v1774090729/unnamed_mg0stn.png" />
-        <meta property="og:url" content="https://whisperbin.shop/send_anonymous/{user_display}" />
+        <meta property="og:url" content="https://whisperbin.shop/drop_anonymous/{user_display}" />
         <meta property="og:type" content="website" />
         <meta http-equiv="refresh" content="0; url=/https://whisperbin.shop/send_messages/{user_display}" />
         <meta property="og:site_name" content="WhisperBin" />
@@ -38,7 +38,7 @@ async def send_message(username: str = "me"):
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="{title}" />
         <meta name="twitter:description" content="{description}" />
-        <meta name="twitter:image" content="https://whisperbin.shop/preview.png" />
+        <meta name="twitter:image" content="https://res.cloudinary.com/dcrpmvykk/image/upload/v1774090729/unnamed_mg0stn.png" />
 
     </html>
     """
