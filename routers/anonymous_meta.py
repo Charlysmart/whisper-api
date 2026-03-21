@@ -5,15 +5,15 @@ import html
 metaredirect_router = APIRouter(prefix="/pages", tags=["Pages"])
 
 @metaredirect_router.get("/drop_anonymous/{username}", response_class=HTMLResponse)
-@metaredirect_router.get("/drop_anonymous", response_class=HTMLResponse)  # 👈 handles no username
-async def send_message(username: str = "me"):
-    
+@metaredirect_router.get("/drop_anonymous", response_class=HTMLResponse)
+async def drop_anonymous(username: str = "me"):
+
     user_display = html.escape(username)
 
     title = f"Send {user_display} an Anonymous Message 👀"
     description = (
         f"Send {user_display} a message anonymously. "
-        f"They won’t know it’s you 😉. You might even get a reply!"
+        f"They won’t know it’s you 😉. You can even get a reply."
     )
 
     return f"""
@@ -29,9 +29,8 @@ async def send_message(username: str = "me"):
         <meta property="og:title" content="{title}" />
         <meta property="og:description" content="{description}" />
         <meta property="og:image" content="https://res.cloudinary.com/dcrpmvykk/image/upload/v1774090729/unnamed_mg0stn.png" />
-        <meta property="og:url" content="https://whisperbin.shop/drop_anonymous/{user_display}" />
+        <meta property="og:url" content="https://whisperbin.shop/pages/drop_anonymous/{user_display}" />
         <meta property="og:type" content="website" />
-        <meta http-equiv="refresh" content="0; url=/https://whisperbin.shop/send_message/{user_display}" />
         <meta property="og:site_name" content="WhisperBin" />
 
         <!-- Twitter -->
@@ -40,5 +39,9 @@ async def send_message(username: str = "me"):
         <meta name="twitter:description" content="{description}" />
         <meta name="twitter:image" content="https://res.cloudinary.com/dcrpmvykk/image/upload/v1774090729/unnamed_mg0stn.png" />
 
+        <!-- Smooth redirect (no visible page) -->
+        <meta http-equiv="refresh" content="0; url=https://whisperbin.shop/send_message/{user_display}" />
+
+    </head>
     </html>
     """
