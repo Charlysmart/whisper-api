@@ -5,6 +5,7 @@ from config.setting import Setting
 from database.connect import Base, engine
 from contextlib import asynccontextmanager
 from routers.auth import auth_router
+from routers.anonymous_meta import metaredirect_router
 from routers.verification import  verify_router
 from routers.users.anonymous  import anonymous_router
 from routers.users.chat import chat_router
@@ -66,3 +67,4 @@ app.include_router(block_chat_router)
 app.include_router(dashboard_router)
 app.include_router(user_management_router)
 app.include_router(reset_password_router)
+app.include_router(metaredirect_router)
