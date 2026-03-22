@@ -16,7 +16,7 @@ class RegisterUserIn(BaseModel):
 
     @model_validator(mode='after')
     def validate_info(self):
-        self.username = self.username.lower()
+        self.username = self.username.lower().strip()
         if self.password != self.confirm_password:
             raise ValueError("Passwords do not match!")
         return self
@@ -29,7 +29,7 @@ class AdminRegister(BaseModel):
     
     @model_validator(mode='after')
     def convert_username(self):
-        self.username = self.username.lower()
+        self.username = self.username.lower().strip()
         return self
     
 
@@ -39,5 +39,5 @@ class LoginInfo(BaseModel):
 
     @model_validator(mode="after")
     def convert_username(self):
-        self.username = self.username.lower()
+        self.username = self.username.lower().strip()
         return self
