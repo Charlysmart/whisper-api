@@ -3,10 +3,17 @@ import cloudinary.uploader
 
 class CloudinaryService:
     @staticmethod
-    def uploadImage(file):
+    def uploadImage(file, username: str, thread: str):
         try:
-            result = cloudinary.uploader.upload(file)
+            folder_path = f"users/{username}/{thread}"
+
+            result = cloudinary.uploader.upload(
+                file,
+                folder=folder_path
+            )
+
             return result
+
         except Exception as e:
             raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
         

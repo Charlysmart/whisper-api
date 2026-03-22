@@ -28,7 +28,7 @@ async def drop_anonymous(username: str = "me"):
         <!-- Open Graph -->
         <meta property="og:title" content="{title}" />
         <meta property="og:description" content="{description}" />
-        <meta property="og:image" content="https://res.cloudinary.com/dcrpmvykk/image/upload/v1774090729/unnamed_mg0stn.png" />
+        <meta property="og:image" content="https://res.cloudinary.com/dcrpmvykk/image/upload/v1774192825/screen_fice7n.png" />
         <meta property="og:url" content="https://whisperbin.shop/pages/drop_anonymous/{user_display}" />
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="WhisperBin" />
@@ -37,7 +37,7 @@ async def drop_anonymous(username: str = "me"):
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="{title}" />
         <meta name="twitter:description" content="{description}" />
-        <meta name="twitter:image" content="https://res.cloudinary.com/dcrpmvykk/image/upload/v1774090729/unnamed_mg0stn.png" />
+        <meta name="twitter:image" content="https://res.cloudinary.com/dcrpmvykk/image/upload/v1774192825/screen_fice7n.png" />
 
         <!-- Smooth redirect (no visible page) -->
         <meta http-equiv="refresh" content="0; url=https://www.whisperbin.shop/send_message/{user_display}" />
