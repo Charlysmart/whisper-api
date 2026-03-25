@@ -4,7 +4,7 @@ from config.setting import Setting
 from sqlalchemy.ext.asyncio import AsyncSession
 from database.session import get_db
 from routers.admin.user_management import UserCrud
-from services.send_mail import SendEmail
+from services.send_email import SendEmail
 from services.store_token import TokenCRUD
 from services.users import UserCRUD
 from utils.authentication_token import create_access_token, create_refresh_token, verify_token

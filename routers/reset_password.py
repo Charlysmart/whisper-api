@@ -3,9 +3,10 @@ from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from routers.admin.user_management import UserCrud
 from schemas.reset_password import ResetPassword
-from services.send_mail import SendEmail
+from services.send_email import SendEmail
 from services.store_token import TokenCRUD
 from sqlalchemy.ext.asyncio import AsyncSession
+from utils.email_masker import mask_email
 from utils.hash_password import hash_password
 from utils.verification_token import generate_verification_token
 
@@ -29,7 +30,7 @@ async def forgot_password(username: str, db: AsyncSession = Depends(get_db)):
     if not send_code:
         raise HTTPException(status_code=500, detail="Error sending OTP.")
     return {
-        "message" : f"OTP has been sent to your email!"
+        "message" : f"OTP has been sent to your email {mask_email(check_user.email)}!"
     }
     
 @reset_password_router.get("/check_otp")

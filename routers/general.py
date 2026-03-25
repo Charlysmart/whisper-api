@@ -1,5 +1,6 @@
 from typing import Literal
 from services.users import UserCRUD
+from utils.email_masker import mask_email
 from utils.oauth import RoleChecker, check_user_verified
 from fastapi import APIRouter, HTTPException, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession

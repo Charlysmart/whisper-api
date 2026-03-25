@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from models.tokens import Tokens
 from schemas.users import AdminRegister, LoginInfo, RegisterUserIn
 from sqlalchemy.ext.asyncio import AsyncSession
-from services.send_mail import SendEmail
+from services.send_email import SendEmail
 from services.store_token import TokenCRUD
 from services.users import UserCRUD
 from utils.hash_password import hash_password, verify_password
