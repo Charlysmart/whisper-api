@@ -34,6 +34,9 @@ async def drop_anonymous(request: Request, username: str):
             <meta property="og:description" content="{description}" />
             <meta property="og:image" content="https://res.cloudinary.com/dcrpmvykk/image/upload/v1774479465/unnamed_6_wnwcm6.png" />
             <meta property="og:url" content="{setting.sitename}/pages/drop_anonymous/{user_display}" />
+            <meta property="og:image:width" content="1200" />
+            <meta property="og:image:height" content="630" />
+            <meta property="og:image:type" content="image/png" />
             <meta property="og:type" content="website" />
 
             <!-- Twitter -->
