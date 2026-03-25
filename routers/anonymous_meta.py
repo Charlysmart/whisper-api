@@ -2,7 +2,10 @@ from fastapi import APIRouter
 from fastapi.responses import HTMLResponse
 import html
 
+from config.setting import Setting
+
 metaredirect_router = APIRouter(prefix="/pages", tags=["Pages"])
+setting = Setting()
 
 @metaredirect_router.get("/drop_anonymous/{username}", response_class=HTMLResponse)
 @metaredirect_router.get("/drop_anonymous", response_class=HTMLResponse)
@@ -28,7 +31,7 @@ async def drop_anonymous(username: str = "me"):
         <!-- Open Graph -->
         <meta property="og:title" content="{title}" />
         <meta property="og:description" content="{description}" />
-        <meta property="og:image" content="https://res.cloudinary.com/dcrpmvykk/image/upload/v1774192825/screen_fice7n.png" />
+        <meta property="og:image" content="https://res.cloudinary.com/dcrpmvykk/image/upload/v1774479465/unnamed_6_wnwcm6.png" />
         <meta property="og:url" content="https://whisperbin.shop/pages/drop_anonymous/{user_display}" />
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="WhisperBin" />
@@ -37,10 +40,10 @@ async def drop_anonymous(username: str = "me"):
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="{title}" />
         <meta name="twitter:description" content="{description}" />
-        <meta name="twitter:image" content="https://res.cloudinary.com/dcrpmvykk/image/upload/v1774192825/screen_fice7n.png" />
+        <meta name="twitter:image" content="https://res.cloudinary.com/dcrpmvykk/image/upload/v1774479465/unnamed_6_wnwcm6.png" />
 
         <!-- Smooth redirect (no visible page) -->
-        <meta http-equiv="refresh" content="0; url=https://www.whisperbin.shop/send_message/{user_display}" />
+        <meta http-equiv="refresh" content="0; url={setting.sitename}/send_message/{user_display}" />
 
     </head>
     </html>
