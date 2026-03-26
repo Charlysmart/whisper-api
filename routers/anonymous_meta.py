@@ -31,7 +31,7 @@ async def drop_anonymous(request: Request, username: str):
     <!-- Open Graph -->
     <meta property="og:title" content="{title}" />
     <meta property="og:description" content="{description}" />
-    <meta property="og:image" content="https://res.cloudinary.com/dcrpmvykk/image/upload/v1774479465/unnamed_6_wnwcm6.png" />
+    <meta property="og:image" content="https://res.cloudinary.com/dcrpmvykk/image/upload/v1774485346/20260326_013432_ifuvoh.jpg" />
     <meta property="og:url" content="{setting.sitename}/pages/drop_anonymous/{user_display}" />
     <meta property="og:type" content="website" />
 
@@ -39,7 +39,7 @@ async def drop_anonymous(request: Request, username: str):
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="{title}" />
     <meta name="twitter:description" content="{description}" />
-    <meta name="twitter:image" content="https://res.cloudinary.com/dcrpmvykk/image/upload/v1774479465/unnamed_6_wnwcm6.png" />
+    <meta name="twitter:image" content="https://res.cloudinary.com/dcrpmvykk/image/upload/v1774485346/20260326_013432_ifuvoh.jpg" />
 
     <!-- Instant redirect -->
     <script>
