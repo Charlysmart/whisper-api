@@ -1,3 +1,11 @@
+from fastapi import APIRouter, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
+import html
+
+from config.setting import Setting
+
+metaredirect_router = APIRouter(prefix="/pages", tags=["Pages"])
+setting = Setting()
 @metaredirect_router.get("/drop_anonymous/{username}", response_class=HTMLResponse)
 async def drop_anonymous(request: Request, username: str):
 
