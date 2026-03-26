@@ -17,7 +17,7 @@ class SendEmail:
                 },
                 json={
                     "subject": "Verify your WhisperBin account",
-                    "from": "WhisperBin <noreply@whisperbin.com",
+                    "from": "WhisperBin <noreply@whisperbin.com>",
                     "to" : [email],
                     "template_id" : template_id,
                     "template_variables" : {
